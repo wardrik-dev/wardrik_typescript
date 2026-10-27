@@ -969,13 +969,42 @@ export interface ServerInput {
       }
     | {
         /**
-         * The owner signs in in a browser, as the server's own authorization server asks; the token is kept for them.
+         * The owner signs in in a browser, and the token is kept for them. Left bare, the server's own authorization server is found from its URL, and Wardrik becomes its client itself. Where it can't be, as with a service that publishes no metadata or registers no clients, the owner gives the OAuth app they registered there: its issuer or its endpoints, its client_id, and the name of the secret they keep its client secret under.
          */
         oauth: {
           /**
            * The scopes to ask for, the server's own unless it says.
            */
           scopes?: string[];
+          /**
+           * The authorization server's issuer URL, whose metadata names its endpoints.
+           */
+          issuer?: string;
+          /**
+           * Where a person signs in, where the issuer publishes no metadata. Given with token_endpoint.
+           */
+          authorization_endpoint?: string;
+          /**
+           * Where a code is exchanged for a token. Given with authorization_endpoint.
+           */
+          token_endpoint?: string;
+          /**
+           * The owner's OAuth app's client ID.
+           */
+          client_id?: string;
+          /**
+           * The app's client secret, as a secret the owner keeps in the vault. It is sealed apart from the owner's secrets as the server is added, so it is never sent anywhere but the token endpoint.
+           */
+          client_secret?: {
+            /**
+             * The secret's name in the owner's vault.
+             */
+            name: string;
+          };
+          /**
+           * How the client secret is sent: in the form, or as HTTP Basic. post unless it says.
+           */
+          client_auth?: "post" | "basic";
         };
       }
     | {
