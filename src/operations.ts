@@ -297,7 +297,7 @@ export const operations = {
     method: "GET",
     path: "/v1/tokens",
     path_params: [],
-    query: [],
+    query: ["resources"],
     body: false,
     unwrap: "tokens",
   },
@@ -532,7 +532,10 @@ export interface Inputs {
     /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
     owner: string;
   };
-  "tokens.list": {};
+  "tokens.list": {
+    /** Patterns of the agents to cover, as acme/agent/* or acme/@jon/*, given once for each. * stands for any run of characters, and ? for one. Every agent the caller reaches where left out. */
+    resources?: string[] | undefined;
+  };
   "tokens.create": TokenInput;
   "tokens.revoke": {
     /** The token's id. */
@@ -1121,15 +1124,23 @@ export class TokensOperations {
 
   /**
    * List the API tokens.
+   *
+   * Every token, oldest first, never a secret. With resources, only the tokens whose every resource the patterns cover, as acme/agent/* lists the tokens over acme's agents alone.
    */
-  list(options: CallOptions = {}): Promise<Outputs["tokens.list"]> {
-    return this.#runner.call("tokens.list", {}, options);
+  list(
+    input: {
+      /** Patterns of the agents to cover, as acme/agent/* or acme/@jon/*, given once for each. * stands for any run of characters, and ? for one. Every agent the caller reaches where left out. */
+      resources?: string[] | undefined;
+    } = {},
+    options: CallOptions = {},
+  ): Promise<Outputs["tokens.list"]> {
+    return this.#runner.call("tokens.list", { ...input }, options);
   }
 
   /**
    * Make an API token.
    *
-   * The token acts for whoever makes it, and is kept as the SHA-256 of its secret. It works for 90 days, or expires_in seconds.
+   * The token acts for whoever makes it, and is kept as the SHA-256 of its secret. It works for 90 days, or expires_in seconds. It is no wider than its maker: each action its roles allow, on each resource it names, is one its maker may take there; it is held to its maker's policy where its maker is held to one; and it expires no later than its maker does.
    */
   create(input: TokenInput, options: CallOptions = {}): Promise<Outputs["tokens.create"]> {
     return this.#runner.call("tokens.create", { ...input }, options);
