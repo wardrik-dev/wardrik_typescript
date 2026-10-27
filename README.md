@@ -113,8 +113,24 @@ await wardrik.listen(
 ```
 
 The server keeps no reader's place, so keep the cursor with what you did, and read on from it. A
-`wardrik.events.dropped` comes whatever the types, so a gap never passes unseen. The pages behind
-a stream are `agent.events` and `wardrik.events.list`.
+`wardrik.events.dropped` comes whatever the types, so a gap never passes unseen.
+
+A stream never ends by itself. To read what a log holds and stop, as a backfill does, read its
+pages, `agent.events` or `wardrik.events.list`, each from the last one's `next`, until one comes
+back empty:
+
+```ts
+let after = saved;
+
+for (;;) {
+  const page = await wardrik.events.list({ resources: ["acme/agent/*"], after, limit: 500 });
+  for (const event of page.events) await save(event);
+  if (page.events.length === 0) break;
+  after = page.next;
+}
+```
+
+`page.next` is a cursor too, so a stream can carry on from it.
 
 ## Tools
 
@@ -142,8 +158,10 @@ pings the server every `keepalive` milliseconds, 15 seconds unless set, and drop
 ping goes unanswered as long again, so a server that went away without closing it isn't waited on.
 The server withdraws a worker's tools the moment its socket goes, and offers them again once it's
 back: an agent takes the tools offered as each turn starts, and each call goes to a worker
-connected then. A call its worker is gone for fails, and the model is told why. A call running when
-the socket drops is aborted through its `signal`.
+connected then. A call running when the socket drops is aborted through its `signal`. It may have
+run, so the server runs it again, under the same `idempotencyKey`, where every worker offering the
+tool marks it `idempotent` or `readOnly`, on whichever worker offers it by then, and otherwise
+waits on a person to approve running it again.
 
 `agent` is the agent a call is made for, `{ key, org, user?, name }`, which the server names from
 the key the worker's token was checked against, never from what the model sent: a worker serving
