@@ -313,7 +313,7 @@ export const operations = {
     method: "POST",
     path: "/v1/deployment/reload",
     path_params: [],
-    query: [],
+    query: ["resources"],
     body: false,
   },
   "deployment.nodes": {
@@ -395,37 +395,37 @@ export interface Inputs {
     resources?: string[] | undefined;
   };
   "agent.read": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. */
+    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
     agent: string;
   };
   "agent.define": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. */
+    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
     agent: string;
   } & AgentDefinition;
   "agent.forget": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. */
+    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
     agent: string;
   };
   "agent.ask": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. */
+    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
     agent: string;
   } & Ask;
   "agent.decide": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. */
+    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
     agent: string;
   } & Decisions;
   "agent.authorization": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. */
+    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
     agent: string;
     /** The id of the call the agent waits on. */
     interrupt: string;
   };
   "agent.cancel": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. */
+    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
     agent: string;
   };
   "agent.events": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. */
+    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
     agent: string;
     /** The event types to read, as wardrik.run.completed, given once for each. Every type where left out. A wardrik.events.dropped comes whatever the types. */
     types?: string[] | undefined;
@@ -435,11 +435,11 @@ export interface Inputs {
     limit?: number | undefined;
   };
   "agent.timeline": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. */
+    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
     agent: string;
   };
   "agent.runs": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. */
+    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
     agent: string;
   };
   "audit.list": {
@@ -449,13 +449,13 @@ export interface Inputs {
     limit?: number | undefined;
   };
   "agent.approve": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. */
+    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
     agent: string;
     /** The id of the call the agent waits on. */
     interrupt: string;
   } & Approve;
   "agent.deny": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. */
+    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
     agent: string;
     /** The id of the call the agent waits on. */
     interrupt: string;
@@ -465,71 +465,71 @@ export interface Inputs {
     resources?: string[] | undefined;
   };
   "agent.definition": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. */
+    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
     agent: string;
   };
   "agent.spawn": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. */
+    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
     agent: string;
   };
   "agent.stop": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. */
+    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
     agent: string;
   };
   "agent.clear": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. */
+    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
     agent: string;
   };
   "agent.calls": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. */
+    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
     agent: string;
   };
   "agent.kill": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. */
+    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
     agent: string;
     /** The id of the tool call. */
     call: string;
   };
   "agent.trigger_set": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. */
+    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
     agent: string;
     /** The trigger's name. */
     trigger: string;
   } & TriggerDefinition;
   "agent.trigger_remove": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. */
+    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
     agent: string;
     /** The trigger's name. */
     trigger: string;
   };
   "connections.list": {
-    /** The owner, as acme for an org or acme/@jon for a person. */
+    /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
     owner: string;
   };
   "connections.connect": {
     /** The account's provider, by name. */
     provider: string;
-    /** The owner, as acme for an org or acme/@jon for a person. */
+    /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
     owner: string;
   };
   "connections.disconnect": {
     /** The account's provider, by name. */
     provider: string;
-    /** The owner, as acme for an org or acme/@jon for a person. */
+    /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
     owner: string;
   };
   "mcp_servers.list": {
-    /** The owner, as acme for an org or acme/@jon for a person. */
+    /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
     owner: string;
   };
   "mcp_servers.add": {
-    /** The owner, as acme for an org or acme/@jon for a person. */
+    /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
     owner: string;
   } & ServerInput;
   "mcp_servers.remove": {
     /** The server's name. */
     server: string;
-    /** The owner, as acme for an org or acme/@jon for a person. */
+    /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
     owner: string;
   };
   "tokens.list": {};
@@ -538,30 +538,33 @@ export interface Inputs {
     /** The token's id. */
     token: string;
   };
-  "deployment.reload": {};
+  "deployment.reload": {
+    /** Patterns of the agents to cover, as acme/agent/* or acme/@jon/*, given once for each. * stands for any run of characters, and ? for one. Every agent the caller reaches where left out. */
+    resources?: string[] | undefined;
+  };
   "deployment.nodes": {};
   "agent.move": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. */
+    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
     agent: string;
   } & Node;
   "secrets.list": {
-    /** The owner, as acme for an org or acme/@jon for a person. */
+    /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
     owner: string;
   };
   "secrets.put": {
     /** The secret's name, as GITHUB_TOKEN. */
     name: string;
-    /** The owner, as acme for an org or acme/@jon for a person. */
+    /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
     owner: string;
   } & SecretInput;
   "secrets.delete": {
     /** The secret's name, as GITHUB_TOKEN. */
     name: string;
-    /** The owner, as acme for an org or acme/@jon for a person. */
+    /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
     owner: string;
   };
   "ceilings.list": {
-    /** The owner, as acme for an org or acme/@jon for a person. */
+    /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
     owner: string;
   };
 }
@@ -1012,7 +1015,7 @@ export class ConnectionsOperations {
    */
   list(
     input: {
-      /** The owner, as acme for an org or acme/@jon for a person. */
+      /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
       owner: string;
     },
     options: CallOptions = {},
@@ -1028,7 +1031,7 @@ export class ConnectionsOperations {
   connect(
     provider: string,
     input: {
-      /** The owner, as acme for an org or acme/@jon for a person. */
+      /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
       owner: string;
     },
     options: CallOptions = {},
@@ -1044,7 +1047,7 @@ export class ConnectionsOperations {
   disconnect(
     provider: string,
     input: {
-      /** The owner, as acme for an org or acme/@jon for a person. */
+      /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
       owner: string;
     },
     options: CallOptions = {},
@@ -1067,7 +1070,7 @@ export class McpServersOperations {
    */
   list(
     input: {
-      /** The owner, as acme for an org or acme/@jon for a person. */
+      /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
       owner: string;
     },
     options: CallOptions = {},
@@ -1082,7 +1085,7 @@ export class McpServersOperations {
    */
   add(
     input: {
-      /** The owner, as acme for an org or acme/@jon for a person. */
+      /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
       owner: string;
     } & ServerInput,
     options: CallOptions = {},
@@ -1098,7 +1101,7 @@ export class McpServersOperations {
   remove(
     server: string,
     input: {
-      /** The owner, as acme for an org or acme/@jon for a person. */
+      /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
       owner: string;
     },
     options: CallOptions = {},
@@ -1154,10 +1157,16 @@ export class DeploymentOperations {
   /**
    * Read every agent's definition again.
    *
-   * Each awake agent takes its definition as it reads now from its next turn, and each sleeping one as it wakes. The node that answers reads its servers and triggers again too.
+   * Each awake agent takes its definition as it reads now from its next turn, and each sleeping one as it wakes. With resources, only the agents the patterns cover are brought to theirs. The node that answers reads its declarations, servers and triggers again too.
    */
-  reload(options: CallOptions = {}): Promise<Outputs["deployment.reload"]> {
-    return this.#runner.call("deployment.reload", {}, options);
+  reload(
+    input: {
+      /** Patterns of the agents to cover, as acme/agent/* or acme/@jon/*, given once for each. * stands for any run of characters, and ? for one. Every agent the caller reaches where left out. */
+      resources?: string[] | undefined;
+    } = {},
+    options: CallOptions = {},
+  ): Promise<Outputs["deployment.reload"]> {
+    return this.#runner.call("deployment.reload", { ...input }, options);
   }
 
   /**
@@ -1184,7 +1193,7 @@ export class SecretsOperations {
    */
   list(
     input: {
-      /** The owner, as acme for an org or acme/@jon for a person. */
+      /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
       owner: string;
     },
     options: CallOptions = {},
@@ -1200,7 +1209,7 @@ export class SecretsOperations {
   put(
     name: string,
     input: {
-      /** The owner, as acme for an org or acme/@jon for a person. */
+      /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
       owner: string;
     } & SecretInput,
     options: CallOptions = {},
@@ -1216,7 +1225,7 @@ export class SecretsOperations {
   delete(
     name: string,
     input: {
-      /** The owner, as acme for an org or acme/@jon for a person. */
+      /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
       owner: string;
     },
     options: CallOptions = {},
@@ -1241,7 +1250,7 @@ export class CeilingsOperations {
    */
   list(
     input: {
-      /** The owner, as acme for an org or acme/@jon for a person. */
+      /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
       owner: string;
     },
     options: CallOptions = {},
