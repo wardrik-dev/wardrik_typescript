@@ -1675,7 +1675,7 @@ export interface StepStartedData {
   };
 }
 /**
- * A subagent answered.
+ * A subagent answered, with what it did and cost along the way: its events stay out of the log, so these are the whole of it.
  */
 export interface SubagentCompletedData {
   agent?: {
@@ -1684,9 +1684,18 @@ export interface SubagentCompletedData {
   };
   message: Message;
   duration_ms: DurationMs;
+  /**
+   * How many tool calls it made.
+   */
+  tool_calls?: number;
+  usage?: Usage;
+  /**
+   * What its model calls and tools cost, together, which counts as the calling tool's; null where nothing priced them.
+   */
+  cost?: Cost | null;
 }
 /**
- * A subagent failed.
+ * A subagent failed, with what it did and cost before it did: its events stay out of the log, so these are the whole of it.
  */
 export interface SubagentFailedData {
   agent?: {
@@ -1695,6 +1704,29 @@ export interface SubagentFailedData {
   };
   error: ErrorInfo;
   duration_ms: DurationMs;
+  /**
+   * How many tool calls it made.
+   */
+  tool_calls?: number;
+  usage?: Usage;
+  /**
+   * What its model calls and tools cost, together, which counts as the calling tool's; null where nothing priced them.
+   */
+  cost?: Cost | null;
+}
+/**
+ * A subagent began a tool call, and how many it has begun. It carries the span subagent.started did. Live: never stored.
+ */
+export interface SubagentProgressData {
+  agent: {
+    id?: string;
+    name?: string;
+  };
+  tool: Tool;
+  /**
+   * How many tool calls it has begun, this one too.
+   */
+  tool_calls: number;
 }
 /**
  * A subagent was handed a task.
@@ -1873,6 +1905,7 @@ export interface EventData {
   "wardrik.step.started": StepStartedData;
   "wardrik.subagent.completed": SubagentCompletedData;
   "wardrik.subagent.failed": SubagentFailedData;
+  "wardrik.subagent.progress": SubagentProgressData;
   "wardrik.subagent.started": SubagentStartedData;
   "wardrik.token.created": TokenCreatedData;
   "wardrik.token.revoked": TokenRevokedData;
