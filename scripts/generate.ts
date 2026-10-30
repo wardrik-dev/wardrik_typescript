@@ -291,8 +291,8 @@ const stream = (operation: Operation, name: string, bound: string[]): string => 
   const { args, value } = signature(operation, bound, query);
 
   return (
-    `  /**\n   * Follows what \`${operation.id}\` reads: each event as it is written, after \`after\`, or after where\n` +
-    `   * the log stands now. See \`EventStream\`.\n   */\n` +
+    `  /**\n   * Streams what \`${operation.id}\` reads, then each new event as it's written. Starts after\n` +
+    `   * \`after\`, or at the end of the log. See \`EventStream\`.\n   */\n` +
     `  ${name}(${[...args, "options: StreamOptions = {}"].join(", ")}): EventStream {\n` +
     `    return this.#runner.stream(${JSON.stringify(operation.id)}, ${value}, options);\n  }\n`
   );

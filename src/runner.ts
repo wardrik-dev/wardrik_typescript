@@ -2,12 +2,12 @@ import { EventStream } from "./events.ts";
 import { agentPath, type Http } from "./http.ts";
 import { operations, type Inputs, type OperationId, type Outputs } from "./operations.ts";
 
-/** What a call takes beside its input. */
+/** Options for a call, besides its input. */
 export interface CallOptions {
   signal?: AbortSignal | undefined;
 }
 
-/** What a stream takes beside its input. */
+/** Options for a stream, besides its input. */
 export interface StreamOptions {
   /** Ends the stream. */
   signal?: AbortSignal | undefined;
@@ -16,7 +16,7 @@ export interface StreamOptions {
 type Entry = (typeof operations)[OperationId];
 type Fields = Record<string, unknown>;
 
-/** Runs operations by their id, over HTTP, as the protocol's document routes them. */
+/** Runs operations by ID over HTTP, at the routes the protocol's document gives. */
 export class Runner {
   readonly http: Http;
 
@@ -25,7 +25,7 @@ export class Runner {
     this.http = http;
   }
 
-  /** Runs the operation `id` with `input`, and answers what it answers. */
+  /** Runs operation `id` with `input` and returns its output. */
   async call<Id extends OperationId>(id: Id, input: Inputs[Id], options: CallOptions = {}): Promise<Outputs[Id]> {
     const entry: Entry = operations[id];
     const { path, query, body } = request(entry, input as Fields);
@@ -34,7 +34,7 @@ export class Runner {
     return ("unwrap" in entry ? answer?.[entry.unwrap] : answer) as Outputs[Id];
   }
 
-  /** Follows the events the streamed operation `id` reads. */
+  /** Returns an `EventStream` of the streamed operation `id`. */
   stream<Id extends OperationId>(id: Id, input: Inputs[Id], options: StreamOptions = {}): EventStream {
     const { path, query } = request(operations[id], input as Fields);
     const { after, ...rest } = query;

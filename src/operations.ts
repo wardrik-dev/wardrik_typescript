@@ -705,8 +705,8 @@ export class AgentOperations {
   }
 
   /**
-   * Follows what `agent.events` reads: each event as it is written, after `after`, or after where
-   * the log stands now. See `EventStream`.
+   * Streams what `agent.events` reads, then each new event as it's written. Starts after
+   * `after`, or at the end of the log. See `EventStream`.
    */
   streamEvents(
     input: {
@@ -948,8 +948,8 @@ export class EventsOperations {
   }
 
   /**
-   * Follows what `events.list` reads: each event as it is written, after `after`, or after where
-   * the log stands now. See `EventStream`.
+   * Streams what `events.list` reads, then each new event as it's written. Starts after
+   * `after`, or at the end of the log. See `EventStream`.
    */
   streamList(
     input: {

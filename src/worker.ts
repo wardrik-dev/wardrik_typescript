@@ -12,79 +12,82 @@ import type { Http } from "./http.ts";
 
 /** The agent a call is made for. */
 export interface CallingAgent {
-  /** Its key, `org/name`, or `org/@user/name` for one that works for a user. */
+  /** Its ID: `org/name`, or `org/@user/name` for a user's agent. */
   key: string;
   org: string;
-  /** The user it works for, where it works for one. */
+  /** The user it works for, if any. */
   user?: string;
   name: string;
 }
 
-/** What a tool's `run` is given beside its arguments. */
+/** The second argument to a tool's `run`. */
 export interface ToolContext {
   /**
-   * The agent the call is made for. Wardrik names it from the key this
-   * worker's token was checked against, never from what the model sent, so a
-   * tool serving many agents can answer each with what is theirs alone.
+   * The agent the call is for. Wardrik sets it from the key this worker's
+   * token was checked against, never from what the model sent. A tool serving
+   * many agents can answer each with only their data.
    */
   agent: CallingAgent | undefined;
-  /** The run the call is part of: the id the run's events carry. */
+  /** The run the call is part of: the ID its events carry. */
   run: string | undefined;
   /**
-   * The call's idempotency key, the same each time Wardrik runs this call.
-   * Pass it on to what the tool changes, such as a payment API, so a call
-   * run again after a crash has no second effect.
+   * The call's idempotency key. It's the same each time Wardrik runs this
+   * call. Pass it to whatever the tool changes, such as a payment API, so a
+   * call run again after a crash has no second effect.
    */
   idempotencyKey: string | undefined;
   /** Aborts when Wardrik stops waiting for the call, or stops it. */
   signal: AbortSignal;
   /**
-   * Says what the call cost in US dollars, such as a paid API's price for it.
-   * The call's `tool_call.completed` event carries it and a budget counts it.
-   * Said more than once, the amounts add up. A call that throws after saying
-   * it is reported failed, at what it said.
+   * Reports what the call cost in US dollars, such as a paid API's price.
+   * The call's `tool_call.completed` event carries it, and budgets count it.
+   * Calls add up. A call that throws after reporting a cost fails with that
+   * cost. Throws a `RangeError` for a negative or non-finite amount.
    */
   cost(usd: number): void;
 }
 
 /** A tool that runs in this process, for agents to call. */
 export interface ToolDefinition<Input extends StandardSchemaWithJSON = StandardSchemaWithJSON> {
-  /** Its name. Agents see it as `workers__<name>`. */
+  /** The tool's name. Agents see it as `workers__<name>`. */
   name: string;
   title?: string;
   /** What it does, for the model. */
   description?: string;
-  /** Its arguments, as a schema such as `z.object({ … })`. */
+  /** The schema of its arguments, such as `z.object({ … })`. */
   input: Input;
   /**
-   * Whether running it again with the same idempotency key has no second
-   * effect. A call Wardrik cannot tell finished, because its agent or its
-   * worker was lost while the call was running, or it answered late, runs
-   * again where every worker offering the tool says so, and waits for a
-   * person otherwise.
+   * `true` if running it again with the same idempotency key has no second
+   * effect.
+   *
+   * A call may have run without Wardrik knowing: its agent or worker was lost
+   * mid-call, or it answered late. Such a call runs again if every worker
+   * offering the tool marks it `idempotent`. Otherwise it waits on a person.
    */
   idempotent?: boolean;
   /**
-   * Whether it changes nothing, which makes it safe to run again as well. A
-   * tool that is not read-only is gated: a call to it waits on a person
-   * unless the agent's policy allows it by name.
+   * `true` if it changes nothing, which also makes it safe to run again.
+   *
+   * A tool that isn't read-only is gated: a call waits on a person unless
+   * the agent's policy allows it by name.
    */
   readOnly?: boolean;
   /**
-   * Does the work. An object is answered as the call's result, a string as
-   * text, and a thrown error as a failed call the model is told about.
+   * Runs the tool. Return an object for the call's result, or a string for
+   * text. A thrown error fails the call, and the model is told.
    */
   run(args: StandardSchemaWithJSON.InferOutput<Input>, context: ToolContext): unknown;
 }
 
-/** How long `work` offers this process's tools. */
+/** Options for `work`. */
 export interface WorkOptions {
-  /** Ends the work, closing the socket. */
+  /** Stops the work and closes the socket. */
   signal?: AbortSignal | undefined;
   /**
-   * How many milliseconds apart the worker pings Wardrik, 15 seconds unless set. A ping not
-   * answered in as long again drops the socket, which is opened again, so a server that went
-   * away without closing it is not waited on.
+   * Milliseconds between pings to Wardrik. `15_000` unless set.
+   *
+   * A ping unanswered for as long again drops the socket and reconnects, so a server that went
+   * away without closing it isn't waited on.
    */
   keepalive?: number | undefined;
 }
@@ -93,7 +96,7 @@ const firstDelay = 500;
 const lastDelay = 30_000;
 const keepalive = 15_000;
 
-/** A result as MCP's `CallToolResult` carries it. */
+/** Converts a tool's return value to MCP's `CallToolResult`. */
 function answer(value: unknown): CallToolResult {
   if (value === undefined || value === null) return { content: [] };
   if (typeof value === "string") return { content: [{ type: "text", text: value }] };
@@ -133,7 +136,7 @@ export class Worker {
     this.#version = version;
   }
 
-  /** Offers `tool`, in place of any of the same name, to a socket already open too. */
+  /** Adds `tool`, replacing any of the same name. Offers it on an open socket too. */
   add<Input extends StandardSchemaWithJSON>(tool: ToolDefinition<Input>): void {
     const replaced = this.#tools.has(tool.name);
     this.#tools.set(tool.name, tool);
@@ -142,9 +145,9 @@ export class Worker {
   }
 
   /**
-   * Holds a socket to the server open and answers calls over it, until
-   * `signal` aborts. A dropped socket is opened again, waiting longer each
-   * time up to 30 seconds. Throws a `WardrikError` when the token is refused.
+   * Holds a socket open to the server and answers calls over it, until
+   * `signal` aborts. Reopens a dropped socket, backing off up to 30 seconds.
+   * Throws a `WardrikError` if the token is refused.
    */
   async work(http: Http, options: WorkOptions = {}): Promise<void> {
     const { signal } = options;
@@ -304,7 +307,7 @@ class SocketTransport implements Transport {
     this.#socket?.send(JSON.stringify(message));
   }
 
-  /** Closes the socket, and ends the transport at once, as a peer that has gone may never answer. */
+  /** Closes the socket and ends the transport at once, since a peer that has gone may never answer. */
   async close(): Promise<void> {
     this.#socket?.close();
     this.#ended();

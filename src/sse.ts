@@ -1,10 +1,10 @@
-/** One server-sent event: its `id:` line, if it had one, and its data. */
+/** One server-sent event: its `id`, if it had one, and its `data`. */
 export interface Message {
   id: string | undefined;
   data: string;
 }
 
-/** The server-sent events a response body carries, in order. */
+/** Yields the server-sent events in a response body, in order. */
 export async function* messages(body: ReadableStream<Uint8Array>): AsyncGenerator<Message> {
   const decoder = new TextDecoder();
   let buffer = "";

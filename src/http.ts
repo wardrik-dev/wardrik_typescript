@@ -5,11 +5,11 @@ export interface Request {
   headers?: Record<string, string>;
   query?: Record<string, unknown>;
   signal?: AbortSignal | undefined;
-  /** Statuses of 400 and above to answer with rather than throw on. */
+  /** Statuses of 400 and above to return instead of throwing. */
   accept?: number[];
 }
 
-/** Requests to one server, as one token. */
+/** Makes requests to one server with one token. */
 export class Http {
   readonly url: string;
   readonly token: string;
@@ -21,7 +21,7 @@ export class Http {
     this.#fetch = fetcher;
   }
 
-  /** The response to `method` on `path`, throwing a `WardrikError` for 400 and above. */
+  /** Sends `method` to `path`. Throws a `WardrikError` for a status of 400 or above. */
   async send(method: string, path: string, request: Request = {}): Promise<Response> {
     const headers: Record<string, string> = { authorization: `Bearer ${this.token}`, ...request.headers };
 
@@ -45,7 +45,7 @@ export class Http {
     return response;
   }
 
-  /** The JSON body of the answer to `method` on `path`, or `undefined` where it has none. */
+  /** Sends `method` to `path` and returns the JSON body, or `undefined` if it's empty. */
   async json<T>(method: string, path: string, request: Request = {}): Promise<T> {
     const response = await this.send(method, path, request);
     const text = await response.text();
@@ -66,9 +66,11 @@ export class Http {
 const segment = (text: string): string => encodeURIComponent(text).replace(/^%40/, "@");
 
 /**
- * An agent's ID as a path carries it: each segment of its ID, `org/name` or `org/@user/name`,
- * encoded on its own, with the `@` that marks a user kept, and a conversation after
- * `conversations/`, as `acme/triage/conversations/C1`.
+ * Returns an agent's ID as a URL path.
+ *
+ * Each segment is percent-encoded on its own, keeping a user's leading `@`. A conversation goes
+ * after `conversations/`, as `acme/triage/conversations/C1`. Throws a `TypeError` for a malformed
+ * ID.
  */
 export function agentPath(id: string): string {
   const segments = id.split("/");

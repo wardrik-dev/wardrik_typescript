@@ -3,17 +3,17 @@ import { AgentOperations } from "./operations.ts";
 import type { Ask, Interrupt, WardrikEvent } from "./protocol.ts";
 import { Runner } from "./runner.ts";
 
-/** How `stream` and `reply` send a message. */
+/** Options for `stream` and `reply`. */
 export interface StreamAskOptions {
   /**
-   * The message's id. A message sent twice with the same id is taken once, so a retry after a lost
-   * answer is safe. A new one is made where left out.
+   * The message's ID. A message sent twice with the same ID is queued once, so retrying after a
+   * lost response is safe. A random UUID unless set.
    */
   id?: string | undefined;
   signal?: AbortSignal | undefined;
 }
 
-/** What `reply` answers: the run's text, or the calls it waits on a person for. */
+/** What `reply` resolves to: the run's text, the calls it waits on a person for, or how it ended. */
 export type Reply =
   | { status: "completed"; message: string; run: string; text: string }
   | { status: "waiting"; message: string; run: string; interrupts: Interrupt[] }
@@ -27,9 +27,10 @@ const runOf = (event: WardrikEvent): string | undefined => event.traceparent.spl
 const asked = (input: string | Ask, id: string): Ask => (typeof input === "string" ? { id, content: input } : { ...input, id });
 
 /**
- * One agent, by its ID, `org/name` or `org/@user/name`, or one of its conversations. Its methods
- * are the protocol's `agent.*` operations, each one request, and nothing is read until one is
- * called; `stream` and `reply` follow the run that answers a message.
+ * One agent, by its ID: `org/name`, `org/@user/name`, or a conversation of either.
+ *
+ * Its methods are the protocol's `agent.*` operations, one request each. Nothing is fetched until
+ * one is called. `stream` and `reply` also follow the run that answers a message.
  */
 export class Agent extends AgentOperations {
   readonly #runner: Runner;
@@ -42,9 +43,11 @@ export class Agent extends AgentOperations {
   }
 
   /**
-   * Sends a message, and gives the events of the run that answers it, until that run completes,
-   * fails or is cancelled. A run that is interrupted to wait on a person carries on once each
-   * interrupt is decided, with `approve` or `deny`, and its events follow.
+   * Sends a message and yields the events of the run that answers it, until the run completes,
+   * fails or is cancelled.
+   *
+   * An interrupted run waits on a person. It carries on once each interrupt is decided with
+   * `approve` or `deny`, and its events keep coming.
    *
    *     for await (const event of agent.stream("What's on fire?")) {
    *       if (event.type === "wardrik.message.delta") process.stdout.write(event.data.delta);
@@ -53,8 +56,8 @@ export class Agent extends AgentOperations {
    *       }
    *     }
    *
-   * The events of other runs are left out, and so is `wardrik.agent.started`, except when the
-   * agent moves to another node during this run.
+   * Leaves out other runs' events. Leaves out `wardrik.agent.started` too, unless the agent moves
+   * to another node during this run.
    */
   async *stream(input: string | Ask, options: StreamAskOptions = {}): AsyncGenerator<WardrikEvent> {
     const id = options.id ?? (typeof input === "string" ? undefined : input.id) ?? crypto.randomUUID();
@@ -75,7 +78,7 @@ export class Agent extends AgentOperations {
   }
 
   /**
-   * Sends a message, and answers once the run that answers it ends, or waits on a person.
+   * Sends a message and resolves when the run that answers it ends or waits on a person.
    *
    *     const reply = await agent.reply("What's on fire?");
    *     if (reply.status === "completed") console.log(reply.text);

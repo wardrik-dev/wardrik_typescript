@@ -4,31 +4,31 @@ import type { Http } from "./http.ts";
 import type { EventOf, EventType, WardrikEvent } from "./protocol.ts";
 import { messages } from "./sse.ts";
 
-/** Where a stream reads from, and what it reads. */
+/** Where a stream reads from. */
 export interface StreamFrom {
-  /** The query the stream's requests carry, beside the cursor. */
+  /** The query each request carries, besides the cursor. */
   query?: Record<string, unknown>;
   /**
-   * The cursor to read after: an event's, a page's `next`, a message's or a snapshot's. Left out,
-   * the stream starts at what is written next.
+   * The cursor to read after: an event's, a page's `next`, a message's or a snapshot's. Without
+   * it, the stream starts at the next event written.
    */
   after?: string | undefined;
   signal?: AbortSignal | undefined;
 }
 
 /**
- * What `wardrik.listen` hands each event of a type to: the event, and the cursor past it, to keep
- * with what the handler does.
+ * Handlers for `wardrik.listen`, by event type. Each gets the event and the cursor after it, to
+ * save with its work.
  */
 export type Handlers = {
   [T in EventType]?: (event: EventOf<T>, cursor: string) => unknown;
 };
 
-/** Where `wardrik.listen` reads from, and until when. */
+/** Options for `wardrik.listen`. */
 export interface ListenOptions {
-  /** The agents each pattern covers, as `"acme/agent/*"`; every agent the token reads where left out. */
+  /** Patterns of the agents to follow, as `"acme/agent/*"`. Every agent the token can read unless set. */
   resources?: string[] | undefined;
-  /** The cursor to carry on after; what is written next where left out. */
+  /** The cursor to resume after. The next event written unless set. */
   after?: string | undefined;
   signal?: AbortSignal | undefined;
 }
@@ -37,18 +37,22 @@ const firstDelay = 250;
 const lastDelay = 10_000;
 
 /**
- * Agents' events, after a cursor on: an async iterable that reconnects after any drop, a `kill -9`
- * of the node included, and resumes after the last event it gave that moved its cursor.
+ * Agents' events after a cursor, as an async iterable.
  *
- * Live events, text and reasoning as it streams and tool progress, move no cursor, and a reconnect
- * does not send again what was missed of them; the `wardrik.message.completed` that follows has
- * the whole text. Where a log was trimmed past the cursor, a `wardrik.events.dropped` says so, and
- * the log is read on from the oldest event it holds.
+ * It reconnects after any drop, including a `kill -9` of the node, and resumes after the last
+ * event it yielded that moved its cursor. It throws on a `WardrikError` below 500.
  *
- * It ends when its signal aborts.
+ * Live events (streamed text and reasoning, and tool progress) don't move the cursor. A reconnect
+ * doesn't resend the ones it missed. The `wardrik.message.completed` that follows has the whole
+ * text.
+ *
+ * If the log was trimmed past the cursor, a `wardrik.events.dropped` event says so, and reading
+ * resumes from the oldest event the log holds.
+ *
+ * It ends only when its signal aborts.
  */
 export class EventStream implements AsyncIterable<WardrikEvent> {
-  /** Settles once the stream is first open, or fails to open. */
+  /** Resolves when the stream first opens. Rejects if it fails to open. */
   readonly opened: Promise<void>;
 
   readonly #http: Http;
@@ -76,7 +80,7 @@ export class EventStream implements AsyncIterable<WardrikEvent> {
     this.opened.catch(() => {});
   }
 
-  /** The cursor after the last event this stream has given that moved it. */
+  /** The cursor after the last event this stream yielded that moved it. */
   get cursor(): string | undefined {
     return this.#after;
   }

@@ -8,17 +8,17 @@ import { Runner, type CallOptions } from "./runner.ts";
 import { Worker, type ToolDefinition, type WorkOptions } from "./worker.ts";
 
 /** This SDK's version. */
-export const version = "0.0.0";
+export const version = "0.1.0-rc.1";
 
-/** How `new Wardrik()` reaches the server. Each is optional. */
+/** Options for `new Wardrik()`. Each is optional. */
 export interface WardrikOptions {
-  /** The server. `WARDRIK_URL`, else `http://127.0.0.1:4747`, the daemon's own. */
+  /** The server's URL. `WARDRIK_URL` unless set, else the daemon's `http://127.0.0.1:4747`. */
   url?: string;
-  /** A token from `wardrik token create`. `WARDRIK_TOKEN` where left out. */
+  /** An API token, as `wardrik token create` makes. `WARDRIK_TOKEN` unless set. */
   token?: string;
-  /** What requests are made with; the global `fetch` where left out. */
+  /** The `fetch` to make requests with. The global `fetch` unless set. */
   fetch?: typeof fetch;
-  /** What this process calls itself as a tool worker. */
+  /** This process's name as a tool worker. `"wardrik-sdk"` unless set. */
   name?: string;
 }
 
@@ -26,8 +26,10 @@ const env = (name: string): string | undefined =>
   (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env[name];
 
 /**
- * A Wardrik server, as one token reaches it. Its namespaces, `agents`, `tokens` and the rest, are
- * the protocol's operations, and `agent(id)` an agent's.
+ * A client for one Wardrik server, using one token.
+ *
+ * Its namespaces, like `agents` and `tokens`, hold the protocol's operations. `agent(id)` holds
+ * an agent's. Throws a `TypeError` if there's no token.
  *
  * ```ts
  * const wardrik = new Wardrik();
@@ -58,14 +60,14 @@ export class Wardrik extends Operations {
     this.#worker = new Worker(options.name ?? "wardrik-sdk", version);
   }
 
-  /** The agent under `id`, `org/name` or `org/@user/name`, or one of its conversations. */
+  /** Returns the agent `id`: `org/name`, `org/@user/name`, or a conversation of either. */
   agent(id: string): Agent {
     return new Agent(this.#http, id);
   }
 
   /**
-   * Runs the operation `id`, as `openapi.json` names it, with its path and query parameters and
-   * its body as one input, and answers what it answers: what every surface runs.
+   * Runs operation `id`, as `openapi.json` names it. `input` holds its path parameters, query
+   * parameters and body together.
    *
    *     await wardrik.run("agent.ask", { agent: "acme/triage", content: "Hi" });
    */
@@ -74,11 +76,12 @@ export class Wardrik extends Operations {
   }
 
   /**
-   * Follows the events of the agents `resources` covers, handing each to the handler of its type
-   * with the cursor past it, and waiting for it before the next. Keep the cursor where the
-   * handler keeps its work, and pass it as `after` to carry on from there: each event is handled
-   * at least once, so drop a repeat by its `id`. Without `after`, it starts from what is written
-   * next. A handler for `wardrik.events.dropped` hears of a log trimmed past the cursor.
+   * Follows the events of the agents `resources` covers, and passes each to the handler for its
+   * type with the cursor after it. Waits for each handler before the next event.
+   *
+   * Save the cursor with the handler's work, and pass it back as `after` to resume. Each event is
+   * handled at least once, so drop repeats by `id`. Without `after`, it starts at the next event
+   * written. A `wardrik.events.dropped` handler hears when the log was trimmed past the cursor.
    *
    *     await wardrik.listen(
    *       {
@@ -92,7 +95,7 @@ export class Wardrik extends Operations {
    *       { resources: ["acme/agent/*"], after: await db.cursor("runs") },
    *     );
    *
-   * It resolves once `signal` aborts, and rejects with what a handler throws.
+   * Resolves when `signal` aborts. Rejects with whatever a handler throws.
    */
   async listen(handlers: Handlers, options: ListenOptions = {}): Promise<void> {
     const input = { resources: options.resources, types: Object.keys(handlers), after: options.after };
@@ -105,9 +108,9 @@ export class Wardrik extends Operations {
   }
 
   /**
-   * Offers a tool that runs in this process to the agents the token reaches, once `work` is
-   * called. An agent calls it as `workers__<name>` where its definition names `workers/*` among
-   * its tools.
+   * Adds a tool that runs in this process. `work` offers it to the agents the token reaches.
+   *
+   * Agents whose tools include `workers/*` call it as `workers__<name>`.
    *
    *     wardrik.tool({
    *       name: "refund_order",
@@ -125,7 +128,7 @@ export class Wardrik extends Operations {
     return this;
   }
 
-  /** Answers calls to the tools offered with `tool`, until `signal` aborts. */
+  /** Answers calls to the tools added with `tool`, until `signal` aborts. */
   work(options: WorkOptions = {}): Promise<void> {
     return this.#worker.work(this.#http, options);
   }
