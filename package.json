@@ -1,6 +1,6 @@
 {
   "name": "@wardrik/sdk",
-  "version": "0.0.0",
+  "version": "0.1.0-rc.1",
   "private": true,
   "description": "Drive Wardrik agents over HTTP, and offer them tools from your own process.",
   "license": "Apache-2.0",
