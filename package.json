@@ -1,9 +1,12 @@
 {
   "name": "@wardrik/sdk",
   "version": "0.1.0-rc.1",
-  "private": true,
   "description": "Drive Wardrik agents over HTTP, and offer them tools from your own process.",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wardrik-dev/wardrik_typescript.git"
+  },
   "type": "module",
   "engines": {
     "node": ">=22.18"
@@ -39,5 +42,8 @@
     "typescript": "^7.0.2",
     "ws": "^8.21.3",
     "zod": "^4.6.5"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
