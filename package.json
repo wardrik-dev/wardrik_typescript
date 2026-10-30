@@ -32,7 +32,7 @@
     "@modelcontextprotocol/server": "^2.3.1"
   },
   "peerDependencies": {
-    "zod": "^4.2.0"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@types/node": "^24.13.6",
@@ -41,7 +41,7 @@
     "prettier": "^3.9.9",
     "typescript": "^7.0.2",
     "ws": "^8.21.3",
-    "zod": "^4.6.5"
+    "zod": "^4.6.6"
   },
   "publishConfig": {
     "access": "public"
