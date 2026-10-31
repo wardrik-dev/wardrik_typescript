@@ -869,6 +869,62 @@ export interface Nodes {
   asleep: number;
 }
 /**
+ * A place an owner's agents' notices go: who holds it, where it came from, and what kind it is. Never its secret, nor a config target's options.
+ */
+export interface NotifyTarget {
+  owner: Owner;
+  /**
+   * What agents' definitions route to.
+   */
+  name: string;
+  source: Source;
+  /**
+   * What sends its notices, as webhook or room. A target added at runtime is a webhook.
+   */
+  kind: string;
+  /**
+   * Where a webhook posts. Omitted for other kinds.
+   */
+  url?: string;
+  /**
+   * The vault secret that signs a runtime webhook's notices. Omitted for one without, and for a config target.
+   */
+  secret?: {
+    /**
+     * The secret's name in the owner's vault.
+     */
+    name: string;
+  };
+}
+/**
+ * What notify_targets.add takes: a webhook the owner's agents' notices are posted to, and the secret that signs them.
+ */
+export interface NotifyTargetInput {
+  /**
+   * What agents' definitions route to, as notify: ops. Letters, digits, - and _, up to 32.
+   */
+  name: string;
+  /**
+   * Where notices are posted, over https. Checked as it's added and as each notice is sent.
+   */
+  url: string;
+  /**
+   * Signs each notice's body, as a secret the owner keeps in the vault. It's read as each notice is sent, so a new value takes effect at once.
+   */
+  secret?: {
+    /**
+     * The secret's name in the owner's vault.
+     */
+    name: string;
+  };
+}
+/**
+ * The targets an owner's agents' notices go to: their own, and those they get from further out, the nearest of a name winning.
+ */
+export interface NotifyTargets {
+  targets: NotifyTarget[];
+}
+/**
  * An OAuth app people sign in with: who holds it, where it came from, and the service's app. Never its client secret.
  */
 export interface Provider {
@@ -1646,6 +1702,35 @@ export interface MessageStartedData {
   decided: Decided;
 }
 /**
+ * Someone added a notify target for an owner's agents.
+ */
+export interface NotifyTargetAddedData {
+  notify_target: {
+    name: string;
+    url: string;
+  };
+  /**
+   * The org, as acme, or the user, as acme/@jon, whose agents' notices it takes.
+   */
+  owner: string;
+  actor?: Principal;
+  assumed_by?: AssumedBy;
+}
+/**
+ * Someone removed one of an owner's notify targets.
+ */
+export interface NotifyTargetRemovedData {
+  notify_target: {
+    name: string;
+  };
+  /**
+   * The org, as acme, or the user, as acme/@jon, whose agents' notices it takes.
+   */
+  owner: string;
+  actor?: Principal;
+  assumed_by?: AssumedBy;
+}
+/**
  * Someone added an OAuth app for an owner's people to sign in with.
  */
 export interface ProviderAddedData {
@@ -2059,6 +2144,8 @@ export interface EventData {
   "wardrik.message.delta": MessageDeltaData;
   "wardrik.message.retrying": MessageRetryingData;
   "wardrik.message.started": MessageStartedData;
+  "wardrik.notify_target.added": NotifyTargetAddedData;
+  "wardrik.notify_target.removed": NotifyTargetRemovedData;
   "wardrik.provider.added": ProviderAddedData;
   "wardrik.provider.removed": ProviderRemovedData;
   "wardrik.reasoning.delta": ReasoningDeltaData;

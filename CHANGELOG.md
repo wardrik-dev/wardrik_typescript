@@ -4,6 +4,8 @@
 
 - `mcpServers.list` answers the servers an owner's agents reach, from further out too, and each
   server says its `owner` and `source`.
+- `notifyTargets.list`, `notifyTargets.add` and `notifyTargets.remove`: webhooks an org or person
+  adds for their agents' notices, and the events for adding and removing one.
 
 ## 0.1.0-rc.1 (2026-10-30)
 
