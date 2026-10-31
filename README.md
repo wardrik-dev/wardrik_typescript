@@ -3,7 +3,7 @@
 Drives Wardrik agents over the HTTP API, and offers them tools that run in your own process.
 
 ```sh
-npm install @wardrik/sdk@0.1.0-rc.1 zod
+npm install @wardrik/sdk@0.1.0-rc.2 zod
 ```
 
 Runs on Node 22.18 or later, Bun or Deno. `zod` 4 is a peer dependency, used for tool inputs.
