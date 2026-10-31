@@ -29,6 +29,9 @@ import type {
   Interrupts,
   Node,
   Nodes,
+  NotifyTarget,
+  NotifyTargetInput,
+  NotifyTargets,
   Provider,
   ProviderInput,
   Providers,
@@ -318,6 +321,28 @@ export const operations = {
     query: ["owner"],
     body: false,
   },
+  "notify_targets.list": {
+    method: "GET",
+    path: "/v1/notify_targets",
+    path_params: [],
+    query: ["owner"],
+    body: false,
+    unwrap: "targets",
+  },
+  "notify_targets.add": {
+    method: "POST",
+    path: "/v1/notify_targets",
+    path_params: [],
+    query: ["owner"],
+    body: true,
+  },
+  "notify_targets.remove": {
+    method: "DELETE",
+    path: "/v1/notify_targets/{target}",
+    path_params: ["target"],
+    query: ["owner"],
+    body: false,
+  },
   "tokens.list": {
     method: "GET",
     path: "/v1/tokens",
@@ -571,6 +596,20 @@ export interface Inputs {
     /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
     owner: string;
   };
+  "notify_targets.list": {
+    /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
+    owner: string;
+  };
+  "notify_targets.add": {
+    /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
+    owner: string;
+  } & NotifyTargetInput;
+  "notify_targets.remove": {
+    /** The notify target, by name. */
+    target: string;
+    /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
+    owner: string;
+  };
   "tokens.list": {
     /** Patterns of the agents to cover, as acme/agent/* or acme/@jon/*, given once for each. * stands for any run of characters, and ? for one. Every agent the caller reaches where left out. */
     resources?: string[] | undefined;
@@ -649,6 +688,9 @@ export interface Outputs {
   "providers.list": Providers["providers"];
   "providers.add": Provider;
   "providers.remove": Provider;
+  "notify_targets.list": NotifyTargets["targets"];
+  "notify_targets.add": NotifyTarget;
+  "notify_targets.remove": NotifyTarget;
   "tokens.list": Tokens["tokens"];
   "tokens.create": TokenIssued;
   "tokens.revoke": Token;
@@ -1213,6 +1255,62 @@ export class ProvidersOperations {
   }
 }
 
+/** The `notify_targets.*` operations. */
+export class NotifyTargetsOperations {
+  readonly #runner: Runner;
+
+  /** @internal */
+  constructor(runner: Runner) {
+    this.#runner = runner;
+  }
+
+  /**
+   * List the notify targets an owner's agents route to.
+   *
+   * The owner's own, then those it gets from further out: a person's org's, then the deployment's, which include those it started with. The nearest of a name wins. Each says which owner holds it.
+   */
+  list(
+    input: {
+      /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
+      owner: string;
+    },
+    options: CallOptions = {},
+  ): Promise<Outputs["notify_targets.list"]> {
+    return this.#runner.call("notify_targets.list", { ...input }, options);
+  }
+
+  /**
+   * Add a webhook for an owner's agents' notices.
+   *
+   * An org's target serves its own agents and every agent of its people; a person's serves their agents alone. One of the owner's own by the same name is a conflict; one held further out is overridden. The URL must be one Wardrik may reach.
+   */
+  add(
+    input: {
+      /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
+      owner: string;
+    } & NotifyTargetInput,
+    options: CallOptions = {},
+  ): Promise<Outputs["notify_targets.add"]> {
+    return this.#runner.call("notify_targets.add", { ...input }, options);
+  }
+
+  /**
+   * Remove a notify target.
+   *
+   * Only the owner's own. Agents routing to it find the next one out by the same name, if there's one.
+   */
+  remove(
+    target: string,
+    input: {
+      /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
+      owner: string;
+    },
+    options: CallOptions = {},
+  ): Promise<Outputs["notify_targets.remove"]> {
+    return this.#runner.call("notify_targets.remove", { ...input, target }, options);
+  }
+}
+
 /** The `tokens.*` operations. */
 export class TokensOperations {
   readonly #runner: Runner;
@@ -1386,6 +1484,8 @@ export class Operations {
   readonly mcpServers: McpServersOperations;
   /** The `providers.*` operations. */
   readonly providers: ProvidersOperations;
+  /** The `notify_targets.*` operations. */
+  readonly notifyTargets: NotifyTargetsOperations;
   /** The `tokens.*` operations. */
   readonly tokens: TokensOperations;
   /** The `deployment.*` operations. */
@@ -1404,6 +1504,7 @@ export class Operations {
     this.connections = new ConnectionsOperations(runner);
     this.mcpServers = new McpServersOperations(runner);
     this.providers = new ProvidersOperations(runner);
+    this.notifyTargets = new NotifyTargetsOperations(runner);
     this.tokens = new TokensOperations(runner);
     this.deployment = new DeploymentOperations(runner);
     this.secrets = new SecretsOperations(runner);
