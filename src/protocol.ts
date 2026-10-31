@@ -1047,17 +1047,19 @@ export interface Secrets {
   }[];
 }
 /**
- * An MCP server an owner added for their agents: its name, its URL, and how its agents sign in to it.
+ * An MCP server an owner's agents reach: who holds it, where it came from, its URL, and how its agents sign in to it. Never its headers.
  */
 export interface Server {
+  owner: Owner;
   /**
    * What the owner's agents call it.
    */
   name: string;
+  source: Source;
   /**
-   * The server's URL.
+   * The server's URL. Omitted for a command the deployment starts.
    */
-  url: string;
+  url?: string;
   /**
    * How its agents sign in to it.
    */
@@ -1178,7 +1180,7 @@ export interface ServerInput {
   except?: string[];
 }
 /**
- * What mcp_servers.list answers: the MCP servers an owner added for their agents.
+ * What mcp_servers.list answers: the MCP servers an owner's agents reach, their own and those they get from further out.
  */
 export interface Servers {
   servers: Server[];

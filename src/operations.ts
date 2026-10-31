@@ -1111,7 +1111,9 @@ export class McpServersOperations {
   }
 
   /**
-   * List the MCP servers an owner added.
+   * List the MCP servers an owner's agents reach.
+   *
+   * The owner's own, then those it gets from further out: a person's org's, then the deployment's, including those it started with. Each says which owner holds it. The nearest of a name wins, as the agents see it.
    */
   list(
     input: {
@@ -1141,7 +1143,7 @@ export class McpServersOperations {
   /**
    * Remove an MCP server.
    *
-   * Its tools leave its agents from their next turn, and the sign-ins to it are forgotten.
+   * One of the owner's own, added at runtime. Its tools leave its agents from their next turn, and the sign-ins to it are forgotten.
    */
   remove(
     server: string,
