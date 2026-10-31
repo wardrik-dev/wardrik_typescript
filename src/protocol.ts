@@ -7,10 +7,25 @@
 export type AssumedBy = Principal[];
 export type DurationMs = number;
 /**
+ * Who holds it: deployment, an org as acme, or a person as acme/@jon.
+ */
+export type Owner = string;
+/**
+ * config for one the deployment started with, which can't be changed at runtime; runtime for one added since.
+ */
+export type Source = "config" | "runtime";
+/**
  * What agent.ask takes: its text as content, or as text parts, under an id of the caller's, or one it's given. A message sent again under the same id is taken once.
  */
 export type Ask = Ask1 & Ask2;
 export type Ask1 = {
+  [k: string]: unknown;
+};
+/**
+ * What an OAuth app takes: its name, the account its tokens are kept as, and the service's app it signs people in with. It needs an issuer, a resource, or both endpoints.
+ */
+export type ProviderInput = ProviderInput1 & ProviderInput2;
+export type ProviderInput1 = {
   [k: string]: unknown;
 };
 
@@ -854,6 +869,123 @@ export interface Nodes {
   asleep: number;
 }
 /**
+ * An OAuth app people sign in with: who holds it, where it came from, and the service's app. Never its client secret.
+ */
+export interface Provider {
+  owner: Owner;
+  /**
+   * The account it grants.
+   */
+  name: string;
+  source: Source;
+  /**
+   * The authorization server's issuer URL, whose metadata names its endpoints.
+   */
+  issuer?: string;
+  /**
+   * The API or MCP server its tokens are for. Finds the issuer where none is given.
+   */
+  resource?: string;
+  /**
+   * Where a person signs in, for a service without metadata. Given with token_endpoint.
+   */
+  authorization_endpoint?: string;
+  /**
+   * Where a code is exchanged for a token. Given with authorization_endpoint.
+   */
+  token_endpoint?: string;
+  /**
+   * The OAuth app's client ID. Without one, Wardrik becomes the client where the service allows.
+   */
+  client_id?: string;
+  /**
+   * The vault secret holding the app's client secret. Omitted for an app without one, or one given its secret in config.
+   */
+  client_secret?: {
+    /**
+     * The secret's name in the owner's vault.
+     */
+    name: string;
+  };
+  /**
+   * How the client secret is sent: in the form, or as HTTP Basic.
+   */
+  client_auth: "post" | "basic";
+  /**
+   * The scopes to ask for.
+   */
+  scopes: string[];
+  /**
+   * How a person signs in: in a browser, or with a code on another device.
+   */
+  flow: "browser" | "device";
+  /**
+   * Extra parameters for a browser sign-in, as access_type: offline. Can't set the ones Wardrik sends itself.
+   */
+  authorization_params?: {
+    [k: string]: string;
+  };
+}
+export interface ProviderInput2 {
+  /**
+   * The account it grants, as the credential tools fetch. Letters, digits, - and _, up to 32.
+   */
+  name: string;
+  /**
+   * The authorization server's issuer URL, whose metadata names its endpoints.
+   */
+  issuer?: string;
+  /**
+   * The API or MCP server its tokens are for. Finds the issuer where none is given.
+   */
+  resource?: string;
+  /**
+   * Where a person signs in, for a service without metadata. Given with token_endpoint.
+   */
+  authorization_endpoint?: string;
+  /**
+   * Where a code is exchanged for a token. Given with authorization_endpoint.
+   */
+  token_endpoint?: string;
+  /**
+   * The OAuth app's client ID. Without one, Wardrik becomes the client where the service allows.
+   */
+  client_id?: string;
+  /**
+   * The app's client secret, as a secret the owner keeps in the vault. It's read each time it's needed, so a new value takes effect at once, and never sent anywhere but the token endpoint.
+   */
+  client_secret?: {
+    /**
+     * The secret's name in the owner's vault.
+     */
+    name: string;
+  };
+  /**
+   * How the client secret is sent: in the form, or as HTTP Basic. post unless it says.
+   */
+  client_auth?: "post" | "basic";
+  /**
+   * The scopes to ask for. None unless it says.
+   */
+  scopes?: string[];
+  /**
+   * How a person signs in: in a browser, or with a code on another device. browser unless it says.
+   */
+  flow?: "browser" | "device";
+  /**
+   * Extra parameters for a browser sign-in, as access_type: offline. Can't set the ones Wardrik sends itself.
+   */
+  authorization_params?: {
+    [k: string]: string;
+  };
+}
+/**
+ * The OAuth apps an owner's people sign in with: their own, and those they get from further out.
+ */
+export interface Providers {
+  providers: Provider[];
+}
+/**
  * What deployment.reload answers: the nodes that read every agent's definition again, and what the declarations couldn't read or define.
  */
 export interface Reloaded {
@@ -969,7 +1101,7 @@ export interface ServerInput {
       }
     | {
         /**
-         * The owner signs in in a browser, and the token is kept for them. Left bare, the server's own authorization server is found from its URL, and Wardrik becomes its client itself. Where it can't be, as with a service that publishes no metadata or registers no clients, the owner gives the OAuth app they registered there: its issuer or its endpoints, its client_id, and the name of the secret they keep its client secret under.
+         * The owner signs in in a browser, and the token is kept for them. Left bare, the server's own authorization server is found from its URL, and Wardrik becomes its client itself. Where it can't be, as with a service that publishes no metadata or registers no clients, name an OAuth app the owner can use as provider, or give the app they registered there: its issuer or its endpoints, its client_id, and the name of the secret they keep its client secret under.
          */
         oauth: {
           /**
@@ -1005,6 +1137,16 @@ export interface ServerInput {
            * How the client secret is sent: in the form, or as HTTP Basic. post unless it says.
            */
           client_auth?: "post" | "basic";
+          /**
+           * Extra parameters for a browser sign-in, as access_type: offline. Can't set the ones Wardrik sends itself.
+           */
+          authorization_params?: {
+            [k: string]: string;
+          };
+          /**
+           * An OAuth app to sign in with, by name: the owner's, their org's or the deployment's. Takes the place of an app given here.
+           */
+          provider?: string;
         };
       }
     | {
