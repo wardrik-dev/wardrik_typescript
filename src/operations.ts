@@ -29,6 +29,9 @@ import type {
   Interrupts,
   Node,
   Nodes,
+  Provider,
+  ProviderInput,
+  Providers,
   Reloaded,
   Runs,
   SecretInput,
@@ -293,6 +296,28 @@ export const operations = {
     query: ["owner"],
     body: false,
   },
+  "providers.list": {
+    method: "GET",
+    path: "/v1/providers",
+    path_params: [],
+    query: ["owner"],
+    body: false,
+    unwrap: "providers",
+  },
+  "providers.add": {
+    method: "POST",
+    path: "/v1/providers",
+    path_params: [],
+    query: ["owner"],
+    body: true,
+  },
+  "providers.remove": {
+    method: "DELETE",
+    path: "/v1/providers/{provider}",
+    path_params: ["provider"],
+    query: ["owner"],
+    body: false,
+  },
   "tokens.list": {
     method: "GET",
     path: "/v1/tokens",
@@ -532,6 +557,20 @@ export interface Inputs {
     /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
     owner: string;
   };
+  "providers.list": {
+    /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
+    owner: string;
+  };
+  "providers.add": {
+    /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
+    owner: string;
+  } & ProviderInput;
+  "providers.remove": {
+    /** The account's provider, by name. */
+    provider: string;
+    /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
+    owner: string;
+  };
   "tokens.list": {
     /** Patterns of the agents to cover, as acme/agent/* or acme/@jon/*, given once for each. * stands for any run of characters, and ? for one. Every agent the caller reaches where left out. */
     resources?: string[] | undefined;
@@ -607,6 +646,9 @@ export interface Outputs {
   "mcp_servers.list": Servers["servers"];
   "mcp_servers.add": ServerAdded;
   "mcp_servers.remove": Server;
+  "providers.list": Providers["providers"];
+  "providers.add": Provider;
+  "providers.remove": Provider;
   "tokens.list": Tokens["tokens"];
   "tokens.create": TokenIssued;
   "tokens.revoke": Token;
@@ -1113,6 +1155,62 @@ export class McpServersOperations {
   }
 }
 
+/** The `providers.*` operations. */
+export class ProvidersOperations {
+  readonly #runner: Runner;
+
+  /** @internal */
+  constructor(runner: Runner) {
+    this.#runner = runner;
+  }
+
+  /**
+   * List the OAuth apps an owner's people sign in with.
+   *
+   * The owner's own, then those it gets from further out: a person's org's, then the deployment's. Each says which owner holds it.
+   */
+  list(
+    input: {
+      /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
+      owner: string;
+    },
+    options: CallOptions = {},
+  ): Promise<Outputs["providers.list"]> {
+    return this.#runner.call("providers.list", { ...input }, options);
+  }
+
+  /**
+   * Add an OAuth app for an owner's people.
+   *
+   * An org's app serves its own agents and every agent of its people; a person's serves their agents alone. One of the owner's own by the same name is a conflict; one held further out is overridden.
+   */
+  add(
+    input: {
+      /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
+      owner: string;
+    } & ProviderInput,
+    options: CallOptions = {},
+  ): Promise<Outputs["providers.add"]> {
+    return this.#runner.call("providers.add", { ...input }, options);
+  }
+
+  /**
+   * Remove an OAuth app.
+   *
+   * Only the owner's own. Sign-ins through it find the next one out by the same name, if there's one.
+   */
+  remove(
+    provider: string,
+    input: {
+      /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
+      owner: string;
+    },
+    options: CallOptions = {},
+  ): Promise<Outputs["providers.remove"]> {
+    return this.#runner.call("providers.remove", { ...input, provider }, options);
+  }
+}
+
 /** The `tokens.*` operations. */
 export class TokensOperations {
   readonly #runner: Runner;
@@ -1284,6 +1382,8 @@ export class Operations {
   readonly connections: ConnectionsOperations;
   /** The `mcp_servers.*` operations. */
   readonly mcpServers: McpServersOperations;
+  /** The `providers.*` operations. */
+  readonly providers: ProvidersOperations;
   /** The `tokens.*` operations. */
   readonly tokens: TokensOperations;
   /** The `deployment.*` operations. */
@@ -1301,6 +1401,7 @@ export class Operations {
     this.audit = new AuditOperations(runner);
     this.connections = new ConnectionsOperations(runner);
     this.mcpServers = new McpServersOperations(runner);
+    this.providers = new ProvidersOperations(runner);
     this.tokens = new TokensOperations(runner);
     this.deployment = new DeploymentOperations(runner);
     this.secrets = new SecretsOperations(runner);
