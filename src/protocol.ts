@@ -1125,7 +1125,7 @@ export interface ServerInput {
            */
           client_id?: string;
           /**
-           * The app's client secret, as a secret the owner keeps in the vault. It is sealed apart from the owner's secrets as the server is added, so it is never sent anywhere but the token endpoint.
+           * The app's client secret, as a secret the owner keeps in the vault. It's read each time it's needed, so a new value takes effect at once, and never sent anywhere but the token endpoint.
            */
           client_secret?: {
             /**
@@ -1644,6 +1644,34 @@ export interface MessageStartedData {
   decided: Decided;
 }
 /**
+ * Someone added an OAuth app for an owner's people to sign in with.
+ */
+export interface ProviderAddedData {
+  provider: {
+    name: string;
+  };
+  /**
+   * The org, as acme, or the user, as acme/@jon, whose people sign in with it.
+   */
+  owner: string;
+  actor?: Principal;
+  assumed_by?: AssumedBy;
+}
+/**
+ * Someone removed an OAuth app an owner had added.
+ */
+export interface ProviderRemovedData {
+  provider: {
+    name: string;
+  };
+  /**
+   * The org, as acme, or the user, as acme/@jon, whose people sign in with it.
+   */
+  owner: string;
+  actor?: Principal;
+  assumed_by?: AssumedBy;
+}
+/**
  * Reasoning of an assistant message as it streams. Live: never stored.
  */
 export interface ReasoningDeltaData {
@@ -2029,6 +2057,8 @@ export interface EventData {
   "wardrik.message.delta": MessageDeltaData;
   "wardrik.message.retrying": MessageRetryingData;
   "wardrik.message.started": MessageStartedData;
+  "wardrik.provider.added": ProviderAddedData;
+  "wardrik.provider.removed": ProviderRemovedData;
   "wardrik.reasoning.delta": ReasoningDeltaData;
   "wardrik.room.bound": RoomBoundData;
   "wardrik.room.unbound": RoomUnboundData;
