@@ -183,13 +183,13 @@ describe("owners", () => {
     const crm = { name: "crm", url: "https://mcp.crm.example/mcp", auth: { secret: { name: "CRM_KEY" } } };
     assert.deepEqual(await wardrik.connections.connect("linear", { owner: "acme/@jon" }), link);
     await wardrik.mcpServers.add({ owner: "acme", ...crm });
-    assert.equal(await wardrik.secrets.put("CRM_KEY", { owner: "acme", value: "s3cret" }), undefined);
+    assert.equal(await wardrik.secrets.put("CRM_KEY", { owner: "acme", value: "s3cret", purpose: "header" }), undefined);
     assert.deepEqual(await wardrik.ceilings.list({ owner: "acme" }), []);
 
     assert.deepEqual(sent(), [
       ["POST", "/v1/connections/linear?owner=acme%2F%40jon", undefined],
       ["POST", "/v1/servers?owner=acme", crm],
-      ["PUT", "/v1/secrets/CRM_KEY?owner=acme", { value: "s3cret" }],
+      ["PUT", "/v1/secrets/CRM_KEY?owner=acme", { value: "s3cret", purpose: "header" }],
       ["GET", "/v1/ceilings?owner=acme", undefined],
     ]);
   });

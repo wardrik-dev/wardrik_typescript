@@ -1085,21 +1085,25 @@ export interface Runs {
   cursor: string;
 }
 /**
- * What secrets.put takes: the value to seal.
+ * What secrets.put takes: the value to seal, and what it's for. A secret is read only for its purpose, so a client secret is never read as an API key.
  */
 export interface SecretInput {
   value: string;
+  /**
+   * api_key for a key code calls a service with, client_secret for an OAuth app's, header for an MCP server's header, signing_secret for a webhook's.
+   */
+  purpose: "api_key" | "client_secret" | "header" | "signing_secret";
 }
 /**
- * What secrets.list answers: each secret the owner holds, by name, and whether it's one they sealed or an account they connected. Never a value.
+ * What secrets.list answers: each secret the owner holds, by name, and what it's for. Never a value.
  */
 export interface Secrets {
   secrets: {
     name: string;
     /**
-     * secret for one the owner sealed, grant for an account they connected.
+     * What it's for: api_key, client_secret, header or signing_secret for one the owner sealed, grant for an account they connected, token for a chat app's install. secret for one sealed with no purpose.
      */
-    kind: "secret" | "grant";
+    kind: "secret" | "grant" | "api_key" | "client_secret" | "header" | "signing_secret" | "token";
   }[];
 }
 /**

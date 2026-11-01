@@ -10,6 +10,10 @@
 - `mcpServers.list` answers the servers an owner's agents reach, from further out too, and each
   server says its `owner` and `source`.
 
+### Breaking
+
+- `secrets.put` takes a `purpose`: `api_key`, `client_secret`, `header` or `signing_secret`.
+
 ## 0.1.0-rc.1 (2026-10-30)
 
 - `Wardrik`, a client for Wardrik's HTTP API, configured from `WARDRIK_URL` and `WARDRIK_TOKEN` or
