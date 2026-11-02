@@ -123,19 +123,6 @@ export interface Principal {
   name?: string;
 }
 /**
- * What a token allows, on what.
- */
-export interface Statement {
-  /**
-   * What it allows, as agent.ask or agents.list; agent.* is every action on one agent, and * every action.
-   */
-  actions: string[];
-  /**
-   * What it allows them on, each a resource pattern, as IAM writes one: * matches anything, / included, and ? one character. acme/agent/* is acme's own agents, acme/@jon/* everything of jon's in acme, acme/* everything of acme's and its users', and * everything.
-   */
-  resources: string[];
-}
-/**
  * Who decided a call.
  */
 export interface Decided {
@@ -149,7 +136,7 @@ export interface Decided {
   hooks?: string[];
 }
 /**
- * What answered a tool call, as its tool names it: a tool worker's token, for one.
+ * What answered a tool call, as its tool names it: a tool worker's principal, for one.
  */
 export interface ServedBy {
   id: string;
@@ -1295,75 +1282,6 @@ export interface Timeline {
   cursor: string;
 }
 /**
- * An API token as Wardrik keeps it, never its secret.
- */
-export interface Token {
-  /**
-   * What revoking it takes.
-   */
-  id: string;
-  name: string;
-  principal: Principal;
-  /**
-   * What it allows, on what; anything none states is denied.
-   */
-  statements: Statement[];
-  /**
-   * The policy every agent it defines runs under, ahead of the agent's own, by its name: what IAM calls a permissions boundary. Absent where it names none.
-   */
-  policy?: string;
-  /**
-   * When it stops working.
-   */
-  expires?: string;
-  created_at: string;
-}
-/**
- * What tokens.create takes: its name, the resources it reaches, and the roles it holds there. It acts for whoever makes it.
- */
-export interface TokenInput {
-  /**
-   * What it is listed as.
-   */
-  name: string;
-  /**
-   * What it reaches, each a resource pattern: acme/agent/* for acme's own agents, acme/@jon/* for everything of a user's, acme/* for everything of the org's and its users', acme/agent/triage for one agent, or * for everything.
-   *
-   * @minItems 1
-   */
-  resources: string[];
-  /**
-   * What it may do there, each a named set of actions.
-   *
-   * @minItems 1
-   */
-  roles: ("reader" | "messenger" | "approver" | "definer" | "worker" | "owner")[];
-  /**
-   * The policy every agent it defines runs under, ahead of the agent's own, by the name the server holds it under: what IAM calls a permissions boundary. The token making it names its own where this is left out.
-   */
-  policy?: string;
-  /**
-   * How many seconds it works for; the server's own lifetime for API tokens, 90 days unless set, where left out.
-   */
-  expires_in?: number;
-}
-/**
- * What tokens.create answers: the token just made, and the secret that presents it, given this once.
- */
-export interface TokenIssued {
-  token: Token;
-  /**
-   * What a request presents, as Authorization: Bearer secret.
-   */
-  secret: string;
-}
-/**
- * What tokens.list answers: every API token, oldest first.
- */
-export interface Tokens {
-  tokens: Token[];
-}
-/**
  * What agent.trigger_set takes, with a prompt or a prompt_file, and what it and agent.trigger_remove answer, with its name. A trigger on a clock has every, and a cron expression a timezone where it is not UTC; overlap is skip, missed is run_once and jitter is 0 where they are left out. feed watches an RSS or Atom feed, or a list of them. A webhook has webhook in place of every, holding its secret, as ${NAME}, and verify, shared or standard; it is sent requests at POST /v1/hooks/{agent}/{trigger}, and its overlap is queue where it says none.
  */
 export interface TriggerDefinition {
@@ -2000,40 +1918,6 @@ export interface SubagentStartedData {
   prompt: string;
 }
 /**
- * Someone made an API token, which acts for whoever made it.
- */
-export interface TokenCreatedData {
-  token: {
-    id: string;
-    name: string;
-  };
-  principal: Principal;
-  /**
-   * What it allows, on what; anything none states is denied.
-   */
-  statements: Statement[];
-  /**
-   * The policy every agent it defines runs under, ahead of the agent's own, by its name: what IAM calls a permissions boundary. Absent where it names none.
-   */
-  policy?: string;
-  /**
-   * When it stops working.
-   */
-  expires?: string;
-  actor?: Principal;
-  assumed_by?: AssumedBy;
-}
-/**
- * Someone revoked an API token.
- */
-export interface TokenRevokedData {
-  token: {
-    id: string;
-  };
-  actor?: Principal;
-  assumed_by?: AssumedBy;
-}
-/**
  * A tool call answered, or was answered from the ledger when replayed.
  */
 export interface ToolCallCompletedData {
@@ -2172,8 +2056,6 @@ export interface EventData {
   "wardrik.subagent.failed": SubagentFailedData;
   "wardrik.subagent.progress": SubagentProgressData;
   "wardrik.subagent.started": SubagentStartedData;
-  "wardrik.token.created": TokenCreatedData;
-  "wardrik.token.revoked": TokenRevokedData;
   "wardrik.tool_call.completed": ToolCallCompletedData;
   "wardrik.tool_call.denied": ToolCallDeniedData;
   "wardrik.tool_call.progress": ToolCallProgressData;

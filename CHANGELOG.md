@@ -13,6 +13,8 @@
 ### Breaking
 
 - `secrets.put` takes a `purpose`: `api_key`, `client_secret`, `header` or `signing_secret`.
+- `tokens.*` are gone, and the operations over many agents take `agents`, exact agent IDs, for
+  `resources`.
 
 ## 0.1.0-rc.1 (2026-10-30)
 

@@ -14,7 +14,7 @@ export const version = "0.1.0-rc.2";
 export interface WardrikOptions {
   /** The server's URL. `WARDRIK_URL` unless set, else the daemon's `http://127.0.0.1:4747`. */
   url?: string;
-  /** An API token, as `wardrik token create` makes. `WARDRIK_TOKEN` unless set. */
+  /** The bearer credential, whatever the host's authenticator takes. `WARDRIK_TOKEN` unless set. */
   token?: string;
   /** The `fetch` to make requests with. The global `fetch` unless set. */
   fetch?: typeof fetch;
@@ -26,9 +26,9 @@ const env = (name: string): string | undefined =>
   (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env[name];
 
 /**
- * A client for one Wardrik server, using one token.
+ * A client for one Wardrik server, using one credential.
  *
- * Its namespaces, like `agents` and `tokens`, hold the protocol's operations. `agent(id)` holds
+ * Its namespaces, like `agents` and `events`, hold the protocol's operations. `agent(id)` holds
  * an agent's. Throws a `TypeError` if there's no token.
  *
  * ```ts
@@ -76,8 +76,9 @@ export class Wardrik extends Operations {
   }
 
   /**
-   * Follows the events of the agents `resources` covers, and passes each to the handler for its
-   * type with the cursor after it. Waits for each handler before the next event.
+   * Follows the events of `agents`, every agent the caller reaches unless set, and passes each
+   * to the handler for its type with the cursor after it. Waits for each handler before the next
+   * event.
    *
    * Save the cursor with the handler's work, and pass it back as `after` to resume. Each event is
    * handled at least once, so drop repeats by `id`. Without `after`, it starts at the next event
@@ -92,13 +93,13 @@ export class Wardrik extends Operations {
    *           });
    *         },
    *       },
-   *       { resources: ["acme/agent/*"], after: await db.cursor("runs") },
+   *       { agents: ["acme/triage"], after: await db.cursor("runs") },
    *     );
    *
    * Resolves when `signal` aborts. Rejects with whatever a handler throws.
    */
   async listen(handlers: Handlers, options: ListenOptions = {}): Promise<void> {
-    const input = { resources: options.resources, types: Object.keys(handlers), after: options.after };
+    const input = { agents: options.agents, types: Object.keys(handlers), after: options.after };
     const events = this.#runner.stream("events.list", input, { signal: options.signal });
 
     for await (const event of events) {
@@ -108,7 +109,7 @@ export class Wardrik extends Operations {
   }
 
   /**
-   * Adds a tool that runs in this process. `work` offers it to the agents the token reaches.
+   * Adds a tool that runs in this process. `work` offers it to the agents the credential reaches.
    *
    * Agents whose tools include `workers/*` call it as `workers__<name>`.
    *

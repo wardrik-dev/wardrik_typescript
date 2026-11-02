@@ -19,24 +19,16 @@ const wardrik = new Wardrik();
 Options, each optional:
 
 * `url` - the server. `WARDRIK_URL` unless set, else `http://127.0.0.1:4747`.
-* `token` - an API token. `WARDRIK_TOKEN` unless set. Throws a `TypeError` if neither is given.
+* `token` - the bearer credential, whatever the host's authenticator takes. `WARDRIK_TOKEN` unless
+  set. Throws a `TypeError` if neither is given.
 * `fetch` - the `fetch` to use. The global one unless set.
 * `name` - this process's name as a tool worker. `"wardrik-sdk"` unless set.
 
-Make a token with the daemon:
+The SDK sends `token` as `Authorization: Bearer`. The host's authenticator decides who it is, and
+its authorizer what they may do.
 
-```sh
-wardrik token create NAME --resource 'acme/agent/*' --role reader,messenger
-```
-
-Or with `wardrik.tokens.create`, from a token that owns `*`.
-
-A token acts for whoever made it, on the resources its patterns cover, with the roles it was made
-with. A role is a named set of actions, from `reader` to `owner`.
-
-* An action the token doesn't allow throws a `WardrikError` of type `forbidden`.
-* An expired token throws one of type `unauthorized`.
-* A revoked token closes its streams and workers.
+* A credential the authenticator refuses throws a `WardrikError` of type `unauthorized`.
+* An action the caller may not take throws one of type `forbidden`.
 
 ## Operations
 
@@ -45,7 +37,7 @@ what the server does.
 
 * An agent's operations are on `wardrik.agent(id)`.
 * The rest are on a namespace named for the operation's prefix: `wardrik.agents.list`,
-  `wardrik.tokens.create`, `wardrik.mcpServers.add`, `wardrik.ceilings.list`.
+  `wardrik.mcpServers.add`, `wardrik.ceilings.list`.
 * Path parameters come first, by position. The rest of the input is one object, with the
   protocol's field names.
 
@@ -61,7 +53,7 @@ await agent.define({
 await agent.triggerSet("sweep", { every: "*/30 * * * *", prompt: "Check the queue." });
 await agent.approve("call_1", { note: "Go ahead." });
 
-const agents = await wardrik.agents.list({ resources: ["acme/agent/*"] });
+const agents = await wardrik.agents.list({ agents: ["acme/triage", "acme/@jon/notes"] });
 const linear = await wardrik.connections.connect("linear", { owner: "acme/@jon" });
 ```
 
@@ -100,7 +92,7 @@ if (reply.status === "completed") console.log(reply.text);
 
 An interrupt with reason `authorization` waits for a person to connect an account. No event
 carries the sign-in link. Fetch it with `agent.authorization(interrupt.id)`, which resolves to
-`{ url, code? }`. The token needs permission to decide the agent's calls. The call carries on by
+`{ url, code? }`. The caller needs permission to decide the agent's calls. The call carries on by
 itself once the person connects.
 
 ## Events
@@ -127,7 +119,7 @@ the cursor of the last event it yielded that moved the cursor.
   text.
 * If the log was trimmed past the cursor, a `wardrik.events.dropped` event says so.
 
-`wardrik.events.streamList` follows many agents at once, by pattern. `wardrik.listen` passes each
+`wardrik.events.streamList` follows many agents at once, by ID. `wardrik.listen` passes each
 event to the handler for its type, with the cursor after it:
 
 ```ts
@@ -140,7 +132,7 @@ await wardrik.listen(
       });
     },
   },
-  { resources: ["acme/agent/*"], after: await db.cursor("runs") },
+  { agents: ["acme/triage"], after: await db.cursor("runs") },
 );
 ```
 
@@ -155,7 +147,7 @@ with `agent.events` or `wardrik.events.list` until one is empty:
 let after = saved;
 
 for (;;) {
-  const page = await wardrik.events.list({ resources: ["acme/agent/*"], after, limit: 500 });
+  const page = await wardrik.events.list({ agents: ["acme/triage"], after, limit: 500 });
   for (const event of page.events) await save(event);
   if (page.events.length === 0) break;
   after = page.next;
@@ -182,8 +174,8 @@ await wardrik.work();
 ```
 
 `work` holds a WebSocket open to the server and answers calls over it, as an MCP server, until
-its `signal` aborts. The server offers the tools as `workers__<name>` to every agent the token may
-serve whose tools include `workers/*`.
+its `signal` aborts. The server offers the tools as `workers__<name>` to every agent the credential
+may serve whose tools include `workers/*`.
 
 ### `run`
 
@@ -194,8 +186,8 @@ serve whose tools include `workers/*`.
 
 Its second argument is a `ToolContext`:
 
-* `agent` - the agent the call is for, `{ key, org, user?, name }`. The server sets it from the
-  key the worker's token was checked against, never from what the model sent. A worker serving
+* `agent` - the agent the call is for, `{ key, org, user?, name }`. The server sets it, never
+  from what the model sent. A worker serving
   an agent per customer can answer each with only their data.
 * `run` - the run the call is part of.
 * `idempotencyKey` - the same each time the server runs this call. Pass it to whatever the tool

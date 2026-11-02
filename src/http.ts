@@ -9,7 +9,7 @@ export interface Request {
   accept?: number[];
 }
 
-/** Makes requests to one server with one token. */
+/** Makes requests to one server with one bearer credential. */
 export class Http {
   readonly url: string;
   readonly token: string;

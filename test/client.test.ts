@@ -146,20 +146,20 @@ describe("an agent", () => {
   });
 });
 
-describe("the agents a pattern covers", () => {
+describe("many agents", () => {
   test("are listed, cancelled, forgotten and their parked calls read", async () => {
     server.on("GET", "/v1/agents", (_request, response) => json(response, 200, { agents: [] }));
     server.on("POST", "/v1/agents/cancel", (_request, response) => json(response, 202, { cancelled: ["acme/a"] }));
     server.on("DELETE", "/v1/agents", (_request, response) => json(response, 200, { forgotten: ["acme/a"], kept: [], failed: [] }));
     server.on("GET", "/v1/interrupts", (_request, response) => json(response, 200, { interrupts: [] }));
 
-    const resources = ["acme/agent/*", "acme/@jon/*"];
-    assert.deepEqual(await wardrik.agents.list({ resources }), []);
-    assert.deepEqual(await wardrik.agents.cancel({ resources }), ["acme/a"]);
-    assert.deepEqual((await wardrik.agents.forget({ resources })).forgotten, ["acme/a"]);
+    const agents = ["acme/triage", "acme/@jon/notes"];
+    assert.deepEqual(await wardrik.agents.list({ agents }), []);
+    assert.deepEqual(await wardrik.agents.cancel({ agents }), ["acme/a"]);
+    assert.deepEqual((await wardrik.agents.forget({ agents })).forgotten, ["acme/a"]);
     assert.deepEqual(await wardrik.interrupts.list(), []);
 
-    const query = "resources=acme%2Fagent%2F*&resources=acme%2F%40jon%2F*";
+    const query = "agents=acme%2Ftriage&agents=acme%2F%40jon%2Fnotes";
     assert.deepEqual(
       server.received.map((request) => [request.method, request.path]),
       [
@@ -191,26 +191,6 @@ describe("owners", () => {
       ["POST", "/v1/servers?owner=acme", crm],
       ["PUT", "/v1/secrets/CRM_KEY?owner=acme", { value: "s3cret", purpose: "header" }],
       ["GET", "/v1/ceilings?owner=acme", undefined],
-    ]);
-  });
-});
-
-describe("tokens", () => {
-  test("are listed, created and revoked as the API takes them", async () => {
-    const token = { id: "0123456789ab", name: "ci" };
-    server.on("GET", "/v1/tokens", (_request, response) => json(response, 200, { tokens: [token] }));
-    server.on("POST", "/v1/tokens", (_request, response) => json(response, 201, { token, secret: "wrk_new" }));
-    server.on("DELETE", "/v1/tokens/0123456789ab", (_request, response) => json(response, 200, token));
-
-    const input = { name: "ci", resources: ["acme/agent/*"], roles: ["reader" as const], expires_in: 3600 };
-    assert.deepEqual(await wardrik.tokens.list(), [token]);
-    assert.deepEqual(await wardrik.tokens.create(input), { token, secret: "wrk_new" });
-    assert.deepEqual(await wardrik.tokens.revoke("0123456789ab"), token);
-
-    assert.deepEqual(sent(), [
-      ["GET", "/v1/tokens", undefined],
-      ["POST", "/v1/tokens", input],
-      ["DELETE", "/v1/tokens/0123456789ab", undefined],
     ]);
   });
 });
@@ -256,12 +236,12 @@ describe("events", () => {
     assert.equal(server.received.length, 1);
   });
 
-  test("follow every agent the patterns cover from the head of each, and resume there", async () => {
+  test("follow the agents named from the head of each, and resume there", async () => {
     server.on("GET", "/v1/events/head", (_request, response) => json(response, 200, { cursor: "h0" }));
     server.on("GET", "/v1/events", stream([event("run.completed", {}, { sequence: 3 })]));
     server.on("GET", "/v1/events", stream([event("run.started", {}, { sequence: 4 })], { end: false }));
 
-    const events = wardrik.events.streamList({ resources: ["acme/agent/*"] });
+    const events = wardrik.events.streamList({ agents: ["acme/triage"] });
 
     assert.deepEqual(
       (await collect(events, 2)).map((event) => event.type),
@@ -271,9 +251,9 @@ describe("events", () => {
     assert.deepEqual(
       server.received.map((request) => [request.path, request.headers["last-event-id"]]),
       [
-        ["/v1/events/head?resources=acme%2Fagent%2F*", undefined],
-        ["/v1/events?resources=acme%2Fagent%2F*", "h0"],
-        ["/v1/events?resources=acme%2Fagent%2F*", "000000000003"],
+        ["/v1/events/head?agents=acme%2Ftriage", undefined],
+        ["/v1/events?agents=acme%2Ftriage", "h0"],
+        ["/v1/events?agents=acme%2Ftriage", "000000000003"],
       ],
     );
 
@@ -316,7 +296,7 @@ describe("listen", () => {
           stop.abort();
         },
       },
-      { resources: ["acme/agent/*"], signal: stop.signal },
+      { agents: ["acme/triage"], signal: stop.signal },
     );
 
     assert.deepEqual(handled, ["r1 000000000003", "No. 000000000004"]);
@@ -324,8 +304,8 @@ describe("listen", () => {
     assert.deepEqual(
       server.received.map((request) => [request.path, request.headers["last-event-id"]]),
       [
-        ["/v1/events/head?resources=acme%2Fagent%2F*", undefined],
-        ["/v1/events?resources=acme%2Fagent%2F*&types=wardrik.run.completed&types=wardrik.run.failed", "h0"],
+        ["/v1/events/head?agents=acme%2Ftriage", undefined],
+        ["/v1/events?agents=acme%2Ftriage&types=wardrik.run.completed&types=wardrik.run.failed", "h0"],
       ],
     );
   });

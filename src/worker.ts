@@ -23,9 +23,8 @@ export interface CallingAgent {
 /** The second argument to a tool's `run`. */
 export interface ToolContext {
   /**
-   * The agent the call is for. Wardrik sets it from the key this worker's
-   * token was checked against, never from what the model sent. A tool serving
-   * many agents can answer each with only their data.
+   * The agent the call is for. Wardrik sets it, never from what the model
+   * sent. A tool serving many agents can answer each with only their data.
    */
   agent: CallingAgent | undefined;
   /** The run the call is part of: the ID its events carry. */
@@ -147,7 +146,7 @@ export class Worker {
   /**
    * Holds a socket open to the server and answers calls over it, until
    * `signal` aborts. Reopens a dropped socket, backing off up to 30 seconds.
-   * Throws a `WardrikError` if the token is refused.
+   * Throws a `WardrikError` if the credential is refused.
    */
   async work(http: Http, options: WorkOptions = {}): Promise<void> {
     const { signal } = options;
@@ -171,8 +170,8 @@ export class Worker {
     }
   }
 
-  // A WebSocket that is refused says nothing of why, so the token is tried
-  // first with a plain request, which the server answers 426 when it is good.
+  // A WebSocket that is refused says nothing of why, so the credential is
+  // tried first with a plain request, which the server answers 426 when it is good.
   async #check(http: Http, signal: AbortSignal | undefined): Promise<void> {
     await http.send("GET", "/v1/workers", { accept: [426], signal });
   }

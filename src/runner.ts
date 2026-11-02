@@ -46,7 +46,7 @@ export class Runner {
   // Where a log stands now, so a stream opened without a cursor holds one from the start.
   async #head(id: OperationId, input: Fields): Promise<string> {
     if (id === "agent.events") return (await this.call("agent.read", { agent: input["agent"] as string })).cursor;
-    return this.call("events.head", { resources: input["resources"] as string[] | undefined });
+    return this.call("events.head", { agents: input["agents"] as string[] | undefined });
   }
 }
 

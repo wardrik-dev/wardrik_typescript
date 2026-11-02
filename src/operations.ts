@@ -44,10 +44,6 @@ import type {
   ServerInput,
   Servers,
   Timeline,
-  Token,
-  TokenInput,
-  TokenIssued,
-  Tokens,
   TriggerDefinition,
 } from "./protocol.ts";
 
@@ -57,7 +53,7 @@ export const operations = {
     method: "GET",
     path: "/v1/agents",
     path_params: [],
-    query: ["resources"],
+    query: ["agents"],
     body: false,
     unwrap: "agents",
   },
@@ -65,14 +61,14 @@ export const operations = {
     method: "DELETE",
     path: "/v1/agents",
     path_params: [],
-    query: ["resources"],
+    query: ["agents"],
     body: false,
   },
   "interrupts.list": {
     method: "GET",
     path: "/v1/interrupts",
     path_params: [],
-    query: ["resources"],
+    query: ["agents"],
     body: false,
     unwrap: "interrupts",
   },
@@ -80,7 +76,7 @@ export const operations = {
     method: "GET",
     path: "/v1/events",
     path_params: [],
-    query: ["resources", "types", "after", "limit"],
+    query: ["agents", "types", "after", "limit"],
     body: false,
     stream: true,
   },
@@ -88,7 +84,7 @@ export const operations = {
     method: "GET",
     path: "/v1/events/head",
     path_params: [],
-    query: ["resources"],
+    query: ["agents"],
     body: false,
     unwrap: "cursor",
   },
@@ -192,7 +188,7 @@ export const operations = {
     method: "POST",
     path: "/v1/agents/cancel",
     path_params: [],
-    query: ["resources"],
+    query: ["agents"],
     body: false,
     unwrap: "cancelled",
   },
@@ -343,27 +339,11 @@ export const operations = {
     query: ["owner"],
     body: false,
   },
-  "tokens.list": {
-    method: "GET",
-    path: "/v1/tokens",
-    path_params: [],
-    query: ["resources"],
-    body: false,
-    unwrap: "tokens",
-  },
-  "tokens.create": { method: "POST", path: "/v1/tokens", path_params: [], query: [], body: true },
-  "tokens.revoke": {
-    method: "DELETE",
-    path: "/v1/tokens/{token}",
-    path_params: ["token"],
-    query: [],
-    body: false,
-  },
   "deployment.reload": {
     method: "POST",
     path: "/v1/deployment/reload",
     path_params: [],
-    query: ["resources"],
+    query: ["agents"],
     body: false,
   },
   "deployment.nodes": {
@@ -419,20 +399,20 @@ export type OperationId = keyof typeof operations;
 /** What each operation takes: its path and query parameters and its body, as one object. */
 export interface Inputs {
   "agents.list": {
-    /** Patterns of the agents to cover, as acme/agent/* or acme/@jon/*, given once for each. * stands for any run of characters, and ? for one. Every agent the caller reaches where left out. */
-    resources?: string[] | undefined;
+    /** The agents to cover, by ID, as acme/triage or acme/@jon/triage, given once for each. Every agent the caller reaches where left out. */
+    agents?: string[] | undefined;
   };
   "agents.forget": {
-    /** Patterns of the agents to cover, as acme/agent/* or acme/@jon/*, given once for each. * stands for any run of characters, and ? for one. Every agent the caller reaches where left out. */
-    resources?: string[] | undefined;
+    /** The agents to cover, by ID, as acme/triage or acme/@jon/triage, given once for each. Every agent the caller reaches where left out. */
+    agents?: string[] | undefined;
   };
   "interrupts.list": {
-    /** Patterns of the agents to cover, as acme/agent/* or acme/@jon/*, given once for each. * stands for any run of characters, and ? for one. Every agent the caller reaches where left out. */
-    resources?: string[] | undefined;
+    /** The agents to cover, by ID, as acme/triage or acme/@jon/triage, given once for each. Every agent the caller reaches where left out. */
+    agents?: string[] | undefined;
   };
   "events.list": {
-    /** Patterns of the agents to cover, as acme/agent/* or acme/@jon/*, given once for each. * stands for any run of characters, and ? for one. Every agent the caller reaches where left out. */
-    resources?: string[] | undefined;
+    /** The agents to cover, by ID, as acme/triage or acme/@jon/triage, given once for each. Every agent the caller reaches where left out. */
+    agents?: string[] | undefined;
     /** The event types to read, as wardrik.run.completed, given once for each. Every type where left out. A wardrik.events.dropped comes whatever the types. */
     types?: string[] | undefined;
     /** The cursor to read after: a page's next, the id of an event a stream gave, or a snapshot's cursor. */
@@ -441,8 +421,8 @@ export interface Inputs {
     limit?: number | undefined;
   };
   "events.head": {
-    /** Patterns of the agents to cover, as acme/agent/* or acme/@jon/*, given once for each. * stands for any run of characters, and ? for one. Every agent the caller reaches where left out. */
-    resources?: string[] | undefined;
+    /** The agents to cover, by ID, as acme/triage or acme/@jon/triage, given once for each. Every agent the caller reaches where left out. */
+    agents?: string[] | undefined;
   };
   "agent.read": {
     /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
@@ -511,8 +491,8 @@ export interface Inputs {
     interrupt: string;
   } & Deny;
   "agents.cancel": {
-    /** Patterns of the agents to cover, as acme/agent/* or acme/@jon/*, given once for each. * stands for any run of characters, and ? for one. Every agent the caller reaches where left out. */
-    resources?: string[] | undefined;
+    /** The agents to cover, by ID, as acme/triage or acme/@jon/triage, given once for each. Every agent the caller reaches where left out. */
+    agents?: string[] | undefined;
   };
   "agent.definition": {
     /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
@@ -610,18 +590,9 @@ export interface Inputs {
     /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
     owner: string;
   };
-  "tokens.list": {
-    /** Patterns of the agents to cover, as acme/agent/* or acme/@jon/*, given once for each. * stands for any run of characters, and ? for one. Every agent the caller reaches where left out. */
-    resources?: string[] | undefined;
-  };
-  "tokens.create": TokenInput;
-  "tokens.revoke": {
-    /** The token's id. */
-    token: string;
-  };
   "deployment.reload": {
-    /** Patterns of the agents to cover, as acme/agent/* or acme/@jon/*, given once for each. * stands for any run of characters, and ? for one. Every agent the caller reaches where left out. */
-    resources?: string[] | undefined;
+    /** The agents to cover, by ID, as acme/triage or acme/@jon/triage, given once for each. Every agent the caller reaches where left out. */
+    agents?: string[] | undefined;
   };
   "deployment.nodes": {};
   "agent.move": {
@@ -691,9 +662,6 @@ export interface Outputs {
   "notify_targets.list": NotifyTargets["targets"];
   "notify_targets.add": NotifyTarget;
   "notify_targets.remove": NotifyTarget;
-  "tokens.list": Tokens["tokens"];
-  "tokens.create": TokenIssued;
-  "tokens.revoke": Token;
   "deployment.reload": Reloaded;
   "deployment.nodes": Nodes;
   "agent.move": AgentAnswer["agent"];
@@ -937,12 +905,12 @@ export class AgentsOperations {
   }
 
   /**
-   * List the agents the patterns cover.
+   * List the agents.
    */
   list(
     input: {
-      /** Patterns of the agents to cover, as acme/agent/* or acme/@jon/*, given once for each. * stands for any run of characters, and ? for one. Every agent the caller reaches where left out. */
-      resources?: string[] | undefined;
+      /** The agents to cover, by ID, as acme/triage or acme/@jon/triage, given once for each. Every agent the caller reaches where left out. */
+      agents?: string[] | undefined;
     } = {},
     options: CallOptions = {},
   ): Promise<Outputs["agents.list"]> {
@@ -950,14 +918,14 @@ export class AgentsOperations {
   }
 
   /**
-   * Forget every agent the patterns cover.
+   * Forget the agents.
    *
    * Each agent goes as agent.forget takes it: stopped, with its conversation, definition and triggers deleted.
    */
   forget(
     input: {
-      /** Patterns of the agents to cover, as acme/agent/* or acme/@jon/*, given once for each. * stands for any run of characters, and ? for one. Every agent the caller reaches where left out. */
-      resources?: string[] | undefined;
+      /** The agents to cover, by ID, as acme/triage or acme/@jon/triage, given once for each. Every agent the caller reaches where left out. */
+      agents?: string[] | undefined;
     } = {},
     options: CallOptions = {},
   ): Promise<Outputs["agents.forget"]> {
@@ -965,12 +933,12 @@ export class AgentsOperations {
   }
 
   /**
-   * Stop what every agent the patterns cover is doing.
+   * Stop what the agents are doing.
    */
   cancel(
     input: {
-      /** Patterns of the agents to cover, as acme/agent/* or acme/@jon/*, given once for each. * stands for any run of characters, and ? for one. Every agent the caller reaches where left out. */
-      resources?: string[] | undefined;
+      /** The agents to cover, by ID, as acme/triage or acme/@jon/triage, given once for each. Every agent the caller reaches where left out. */
+      agents?: string[] | undefined;
     } = {},
     options: CallOptions = {},
   ): Promise<Outputs["agents.cancel"]> {
@@ -992,8 +960,8 @@ export class InterruptsOperations {
    */
   list(
     input: {
-      /** Patterns of the agents to cover, as acme/agent/* or acme/@jon/*, given once for each. * stands for any run of characters, and ? for one. Every agent the caller reaches where left out. */
-      resources?: string[] | undefined;
+      /** The agents to cover, by ID, as acme/triage or acme/@jon/triage, given once for each. Every agent the caller reaches where left out. */
+      agents?: string[] | undefined;
     } = {},
     options: CallOptions = {},
   ): Promise<Outputs["interrupts.list"]> {
@@ -1011,14 +979,14 @@ export class EventsOperations {
   }
 
   /**
-   * Read the events of the agents the patterns cover.
+   * Read the agents' events.
    *
    * A page reads after the cursor, from the start without one. A stream reads after the cursor, from what's written next without one. Where a log was trimmed past the cursor, a wardrik.events.dropped says so, and the log is read on from the oldest event it holds.
    */
   list(
     input: {
-      /** Patterns of the agents to cover, as acme/agent/* or acme/@jon/*, given once for each. * stands for any run of characters, and ? for one. Every agent the caller reaches where left out. */
-      resources?: string[] | undefined;
+      /** The agents to cover, by ID, as acme/triage or acme/@jon/triage, given once for each. Every agent the caller reaches where left out. */
+      agents?: string[] | undefined;
       /** The event types to read, as wardrik.run.completed, given once for each. Every type where left out. A wardrik.events.dropped comes whatever the types. */
       types?: string[] | undefined;
       /** The cursor to read after: a page's next, the id of an event a stream gave, or a snapshot's cursor. */
@@ -1037,8 +1005,8 @@ export class EventsOperations {
    */
   streamList(
     input: {
-      /** Patterns of the agents to cover, as acme/agent/* or acme/@jon/*, given once for each. * stands for any run of characters, and ? for one. Every agent the caller reaches where left out. */
-      resources?: string[] | undefined;
+      /** The agents to cover, by ID, as acme/triage or acme/@jon/triage, given once for each. Every agent the caller reaches where left out. */
+      agents?: string[] | undefined;
       /** The event types to read, as wardrik.run.completed, given once for each. Every type where left out. A wardrik.events.dropped comes whatever the types. */
       types?: string[] | undefined;
       /** The cursor to read after: a page's next, the id of an event a stream gave, or a snapshot's cursor. */
@@ -1050,12 +1018,12 @@ export class EventsOperations {
   }
 
   /**
-   * Read where the logs the patterns cover stand.
+   * Read where the agents' logs stand.
    */
   head(
     input: {
-      /** Patterns of the agents to cover, as acme/agent/* or acme/@jon/*, given once for each. * stands for any run of characters, and ? for one. Every agent the caller reaches where left out. */
-      resources?: string[] | undefined;
+      /** The agents to cover, by ID, as acme/triage or acme/@jon/triage, given once for each. Every agent the caller reaches where left out. */
+      agents?: string[] | undefined;
     } = {},
     options: CallOptions = {},
   ): Promise<Outputs["events.head"]> {
@@ -1311,49 +1279,6 @@ export class NotifyTargetsOperations {
   }
 }
 
-/** The `tokens.*` operations. */
-export class TokensOperations {
-  readonly #runner: Runner;
-
-  /** @internal */
-  constructor(runner: Runner) {
-    this.#runner = runner;
-  }
-
-  /**
-   * List the API tokens.
-   *
-   * Every token, oldest first, never a secret. With resources, only the tokens whose every resource the patterns cover, as acme/agent/* lists the tokens over acme's agents alone.
-   */
-  list(
-    input: {
-      /** Patterns of the agents to cover, as acme/agent/* or acme/@jon/*, given once for each. * stands for any run of characters, and ? for one. Every agent the caller reaches where left out. */
-      resources?: string[] | undefined;
-    } = {},
-    options: CallOptions = {},
-  ): Promise<Outputs["tokens.list"]> {
-    return this.#runner.call("tokens.list", { ...input }, options);
-  }
-
-  /**
-   * Make an API token.
-   *
-   * The token acts for whoever makes it, and is kept as the SHA-256 of its secret. It works for 90 days, or expires_in seconds. It is no wider than its maker: each action its roles allow, on each resource it names, is one its maker may take there; it is held to its maker's policy where its maker is held to one; and it expires no later than its maker does.
-   */
-  create(input: TokenInput, options: CallOptions = {}): Promise<Outputs["tokens.create"]> {
-    return this.#runner.call("tokens.create", { ...input }, options);
-  }
-
-  /**
-   * Revoke an API token.
-   *
-   * A revoked token is refused at once. An agent it defined keeps running, under the policy it was defined with.
-   */
-  revoke(token: string, options: CallOptions = {}): Promise<Outputs["tokens.revoke"]> {
-    return this.#runner.call("tokens.revoke", { token }, options);
-  }
-}
-
 /** The `deployment.*` operations. */
 export class DeploymentOperations {
   readonly #runner: Runner;
@@ -1366,12 +1291,12 @@ export class DeploymentOperations {
   /**
    * Read every agent's definition again.
    *
-   * Each awake agent takes its definition as it reads now from its next turn, and each sleeping one as it wakes. With resources, only the agents the patterns cover are brought to theirs. The node that answers reads its declarations, servers and triggers again too.
+   * Each awake agent takes its definition as it reads now from its next turn, and each sleeping one as it wakes. With agents, only those agents are brought to theirs. The node that answers reads its declarations, servers and triggers again too.
    */
   reload(
     input: {
-      /** Patterns of the agents to cover, as acme/agent/* or acme/@jon/*, given once for each. * stands for any run of characters, and ? for one. Every agent the caller reaches where left out. */
-      resources?: string[] | undefined;
+      /** The agents to cover, by ID, as acme/triage or acme/@jon/triage, given once for each. Every agent the caller reaches where left out. */
+      agents?: string[] | undefined;
     } = {},
     options: CallOptions = {},
   ): Promise<Outputs["deployment.reload"]> {
@@ -1486,8 +1411,6 @@ export class Operations {
   readonly providers: ProvidersOperations;
   /** The `notify_targets.*` operations. */
   readonly notifyTargets: NotifyTargetsOperations;
-  /** The `tokens.*` operations. */
-  readonly tokens: TokensOperations;
   /** The `deployment.*` operations. */
   readonly deployment: DeploymentOperations;
   /** The `secrets.*` operations. */
@@ -1505,7 +1428,6 @@ export class Operations {
     this.mcpServers = new McpServersOperations(runner);
     this.providers = new ProvidersOperations(runner);
     this.notifyTargets = new NotifyTargetsOperations(runner);
-    this.tokens = new TokensOperations(runner);
     this.deployment = new DeploymentOperations(runner);
     this.secrets = new SecretsOperations(runner);
     this.ceilings = new CeilingsOperations(runner);
