@@ -28,18 +28,11 @@ import type {
   Interrupts,
   Node,
   Nodes,
-  NotifyTarget,
-  NotifyTargetInput,
-  NotifyTargets,
   Provider,
   ProviderInput,
   Providers,
   Reloaded,
   Runs,
-  Server,
-  ServerAdded,
-  ServerInput,
-  Servers,
   Timeline,
   TriggerDefinition,
 } from "./protocol.ts";
@@ -270,28 +263,6 @@ export const operations = {
     query: ["owner"],
     body: false,
   },
-  "mcp_servers.list": {
-    method: "GET",
-    path: "/v1/servers",
-    path_params: [],
-    query: ["owner"],
-    body: false,
-    unwrap: "servers",
-  },
-  "mcp_servers.add": {
-    method: "POST",
-    path: "/v1/servers",
-    path_params: [],
-    query: ["owner"],
-    body: true,
-  },
-  "mcp_servers.remove": {
-    method: "DELETE",
-    path: "/v1/servers/{server}",
-    path_params: ["server"],
-    query: ["owner"],
-    body: false,
-  },
   "providers.list": {
     method: "GET",
     path: "/v1/providers",
@@ -311,28 +282,6 @@ export const operations = {
     method: "DELETE",
     path: "/v1/providers/{provider}",
     path_params: ["provider"],
-    query: ["owner"],
-    body: false,
-  },
-  "notify_targets.list": {
-    method: "GET",
-    path: "/v1/notify_targets",
-    path_params: [],
-    query: ["owner"],
-    body: false,
-    unwrap: "targets",
-  },
-  "notify_targets.add": {
-    method: "POST",
-    path: "/v1/notify_targets",
-    path_params: [],
-    query: ["owner"],
-    body: true,
-  },
-  "notify_targets.remove": {
-    method: "DELETE",
-    path: "/v1/notify_targets/{target}",
-    path_params: ["target"],
     query: ["owner"],
     body: false,
   },
@@ -515,20 +464,6 @@ export interface Inputs {
     /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
     owner: string;
   };
-  "mcp_servers.list": {
-    /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
-    owner: string;
-  };
-  "mcp_servers.add": {
-    /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
-    owner: string;
-  } & ServerInput;
-  "mcp_servers.remove": {
-    /** The server's name. */
-    server: string;
-    /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
-    owner: string;
-  };
   "providers.list": {
     /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
     owner: string;
@@ -540,20 +475,6 @@ export interface Inputs {
   "providers.remove": {
     /** The account's provider, by name. */
     provider: string;
-    /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
-    owner: string;
-  };
-  "notify_targets.list": {
-    /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
-    owner: string;
-  };
-  "notify_targets.add": {
-    /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
-    owner: string;
-  } & NotifyTargetInput;
-  "notify_targets.remove": {
-    /** The notify target, by name. */
-    target: string;
     /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
     owner: string;
   };
@@ -600,15 +521,9 @@ export interface Outputs {
   "connections.list": Connections["connections"];
   "connections.connect": Connecting;
   "connections.disconnect": Connection;
-  "mcp_servers.list": Servers["servers"];
-  "mcp_servers.add": ServerAdded;
-  "mcp_servers.remove": Server;
   "providers.list": Providers["providers"];
   "providers.add": Provider;
   "providers.remove": Provider;
-  "notify_targets.list": NotifyTargets["targets"];
-  "notify_targets.add": NotifyTarget;
-  "notify_targets.remove": NotifyTarget;
   "deployment.reload": Reloaded;
   "deployment.nodes": Nodes;
   "agent.move": AgentAnswer["agent"];
@@ -1054,62 +969,6 @@ export class ConnectionsOperations {
   }
 }
 
-/** The `mcp_servers.*` operations. */
-export class McpServersOperations {
-  readonly #runner: Runner;
-
-  /** @internal */
-  constructor(runner: Runner) {
-    this.#runner = runner;
-  }
-
-  /**
-   * List the MCP servers an owner's agents reach.
-   *
-   * The owner's own, then those it gets from further out: a person's org's, then the deployment's, including those it started with. Each says which owner holds it. The nearest of a name wins, as the agents see it.
-   */
-  list(
-    input: {
-      /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
-      owner: string;
-    },
-    options: CallOptions = {},
-  ): Promise<Outputs["mcp_servers.list"]> {
-    return this.#runner.call("mcp_servers.list", { ...input }, options);
-  }
-
-  /**
-   * Add an MCP server for an owner's agents.
-   *
-   * An org's server serves its own agents and every agent of its people; a person's serves their agents alone. Its tools reach them from their next turn.
-   */
-  add(
-    input: {
-      /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
-      owner: string;
-    } & ServerInput,
-    options: CallOptions = {},
-  ): Promise<Outputs["mcp_servers.add"]> {
-    return this.#runner.call("mcp_servers.add", { ...input }, options);
-  }
-
-  /**
-   * Remove an MCP server.
-   *
-   * One of the owner's own, added at runtime. Its tools leave its agents from their next turn, and the sign-ins to it are forgotten.
-   */
-  remove(
-    server: string,
-    input: {
-      /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
-      owner: string;
-    },
-    options: CallOptions = {},
-  ): Promise<Outputs["mcp_servers.remove"]> {
-    return this.#runner.call("mcp_servers.remove", { ...input, server }, options);
-  }
-}
-
 /** The `providers.*` operations. */
 export class ProvidersOperations {
   readonly #runner: Runner;
@@ -1166,62 +1025,6 @@ export class ProvidersOperations {
   }
 }
 
-/** The `notify_targets.*` operations. */
-export class NotifyTargetsOperations {
-  readonly #runner: Runner;
-
-  /** @internal */
-  constructor(runner: Runner) {
-    this.#runner = runner;
-  }
-
-  /**
-   * List the notify targets an owner's agents route to.
-   *
-   * The owner's own, then those it gets from further out: a person's org's, then the deployment's, which include those it started with. The nearest of a name wins. Each says which owner holds it.
-   */
-  list(
-    input: {
-      /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
-      owner: string;
-    },
-    options: CallOptions = {},
-  ): Promise<Outputs["notify_targets.list"]> {
-    return this.#runner.call("notify_targets.list", { ...input }, options);
-  }
-
-  /**
-   * Add a webhook for an owner's agents' notices.
-   *
-   * An org's target serves its own agents and every agent of its people; a person's serves their agents alone. One of the owner's own by the same name is a conflict; one held further out is overridden. The URL must be one Wardrik may reach.
-   */
-  add(
-    input: {
-      /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
-      owner: string;
-    } & NotifyTargetInput,
-    options: CallOptions = {},
-  ): Promise<Outputs["notify_targets.add"]> {
-    return this.#runner.call("notify_targets.add", { ...input }, options);
-  }
-
-  /**
-   * Remove a notify target.
-   *
-   * Only the owner's own. Agents routing to it find the next one out by the same name, if there's one.
-   */
-  remove(
-    target: string,
-    input: {
-      /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
-      owner: string;
-    },
-    options: CallOptions = {},
-  ): Promise<Outputs["notify_targets.remove"]> {
-    return this.#runner.call("notify_targets.remove", { ...input, target }, options);
-  }
-}
-
 /** The `deployment.*` operations. */
 export class DeploymentOperations {
   readonly #runner: Runner;
@@ -1266,12 +1069,8 @@ export class Operations {
   readonly audit: AuditOperations;
   /** The `connections.*` operations. */
   readonly connections: ConnectionsOperations;
-  /** The `mcp_servers.*` operations. */
-  readonly mcpServers: McpServersOperations;
   /** The `providers.*` operations. */
   readonly providers: ProvidersOperations;
-  /** The `notify_targets.*` operations. */
-  readonly notifyTargets: NotifyTargetsOperations;
   /** The `deployment.*` operations. */
   readonly deployment: DeploymentOperations;
 
@@ -1282,9 +1081,7 @@ export class Operations {
     this.events = new EventsOperations(runner);
     this.audit = new AuditOperations(runner);
     this.connections = new ConnectionsOperations(runner);
-    this.mcpServers = new McpServersOperations(runner);
     this.providers = new ProvidersOperations(runner);
-    this.notifyTargets = new NotifyTargetsOperations(runner);
     this.deployment = new DeploymentOperations(runner);
   }
 }

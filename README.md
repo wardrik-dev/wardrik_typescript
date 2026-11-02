@@ -37,7 +37,7 @@ what the server does.
 
 * An agent's operations are on `wardrik.agent(id)`.
 * The rest are on a namespace named for the operation's prefix: `wardrik.agents.list`,
-  `wardrik.mcpServers.add`, `wardrik.notifyTargets.list`.
+  `wardrik.providers.add`, `wardrik.connections.list`.
 * Path parameters come first, by position. The rest of the input is one object, with the
   protocol's field names.
 

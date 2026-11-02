@@ -3,17 +3,14 @@
 ## 0.1.0-rc.2 (2026-10-31)
 
 - `providers.list`, `providers.add` and `providers.remove`: OAuth apps an org or person keeps for
-  their people, and the events for adding and removing one. An MCP server names one as its
-  `oauth.provider`.
-- `notifyTargets.list`, `notifyTargets.add` and `notifyTargets.remove`: webhooks an org or person
-  adds for their agents' notices, and the events for adding and removing one.
-- `mcpServers.list` answers the servers an owner's agents reach, from further out too, and each
-  server says its `owner` and `source`.
+  their people, and the events for adding and removing one.
 
 ### Breaking
 
 - `secrets.*` and `ceilings.list` are gone, with the protocol's: `wardrik_daemon` serves them on its
   own routes.
+- `mcpServers.*` and `notifyTargets.*` are gone, with the protocol's: `wardrik_daemon` serves them
+  on its own routes. The events for adding and removing a notify target stay.
 - `tokens.*` are gone, and the operations over many agents take `agents`, exact agent IDs, for
   `resources`.
 

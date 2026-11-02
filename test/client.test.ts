@@ -173,18 +173,19 @@ describe("many agents", () => {
 });
 
 describe("owners", () => {
-  test("connect accounts and add servers, for the owner named", async () => {
+  test("connect accounts and add OAuth apps, for the owner named", async () => {
     const link = { provider: "linear", connected: false, authorization: { url: "https://auth.example.com/a" } };
+    const google = { owner: "acme", name: "google", source: "runtime", issuer: "https://accounts.google.com" };
     server.on("POST", "/v1/connections/linear", (_request, response) => json(response, 200, link));
-    server.on("POST", "/v1/servers", (_request, response) => json(response, 201, { server: "crm", connected: true }));
+    server.on("POST", "/v1/providers", (_request, response) => json(response, 201, google));
 
-    const crm = { name: "crm", url: "https://mcp.crm.example/mcp", auth: { secret: { name: "CRM_KEY" } } };
+    const app = { name: "google", issuer: "https://accounts.google.com" };
     assert.deepEqual(await wardrik.connections.connect("linear", { owner: "acme/@jon" }), link);
-    await wardrik.mcpServers.add({ owner: "acme", ...crm });
+    await wardrik.providers.add({ owner: "acme", ...app });
 
     assert.deepEqual(sent(), [
       ["POST", "/v1/connections/linear?owner=acme%2F%40jon", undefined],
-      ["POST", "/v1/servers?owner=acme", crm],
+      ["POST", "/v1/providers?owner=acme", app],
     ]);
   });
 });
