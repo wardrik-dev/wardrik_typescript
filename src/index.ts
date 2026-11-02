@@ -5,4 +5,4 @@ export { EventStream, type Handlers, type ListenOptions } from "./events.ts";
 export * from "./operations.ts";
 export type * from "./protocol.ts";
 export type { CallOptions, StreamOptions } from "./runner.ts";
-export type { CallingAgent, ToolContext, ToolDefinition, WorkOptions } from "./worker.ts";
+export type { ToolContext, ToolDefinition, WorkOptions } from "./worker.ts";

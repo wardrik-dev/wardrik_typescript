@@ -138,7 +138,7 @@ await wardrik.work({ signal });
 * Agents whose `tools` include `workers/*` see the tool as `workers__refund_order`.
 * Return an object or a string. Throw to fail the call.
 * A tool not marked `readOnly` waits for a person's approval, unless the agent's policy allows it.
-* The context's `agent.key` is the calling agent's ID. Use it to scope data per agent.
+* The context's `agent` is the calling agent's ID. Use it to scope data per agent.
 * A call cut off by a dropped socket runs again only if the tool is `idempotent` or `readOnly`.
   It gets the same `idempotencyKey`.
 

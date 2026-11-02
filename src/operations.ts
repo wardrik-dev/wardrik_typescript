@@ -711,9 +711,9 @@ export class AgentOperations {
   }
 
   /**
-   * Empty an agent's conversation.
+   * Clear an agent's history.
    *
-   * Answers conflict while it runs a turn or waits on a person.
+   * Empties its history. The agent, its definition and its other conversations stay. Answers conflict while it runs a turn or waits on a person.
    */
   clear(options: CallOptions = {}): Promise<Outputs["agent.clear"]> {
     return this.#runner.call(

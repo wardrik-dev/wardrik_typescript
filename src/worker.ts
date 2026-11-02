@@ -10,16 +10,10 @@ import {
 import { WardrikError } from "./errors.ts";
 import type { Http } from "./http.ts";
 
-/** The agent a call is made for. */
-export interface CallingAgent {
-  /** The agent's ID, as your app named it. */
-  key: string;
-}
-
 /** The second argument to a tool's `run`. */
 export interface ToolContext {
-  /** The calling agent. Set by Wardrik, never by the model. */
-  agent: CallingAgent | undefined;
+  /** The calling agent's ID. Set by Wardrik, never by the model. */
+  agent: string | undefined;
   /** The run the call is part of. */
   run: string | undefined;
   /** The same each time Wardrik runs this call. Pass it to whatever the tool changes. */
@@ -78,13 +72,6 @@ function answer(value: unknown): CallToolResult {
     content: [{ type: "text", text }],
     ...(isObject ? { structuredContent: value as Record<string, unknown> } : {}),
   };
-}
-
-function callingAgent(meta: unknown): CallingAgent | undefined {
-  if (typeof meta !== "object" || meta === null) return undefined;
-
-  const { key } = meta as Record<string, unknown>;
-  return typeof key === "string" ? { key } : undefined;
 }
 
 function failed(error: unknown): CallToolResult {
@@ -188,7 +175,7 @@ export class Worker {
         const meta = ctx.mcpReq._meta ?? {};
         let costUsd: number | undefined;
         const context: ToolContext = {
-          agent: callingAgent(meta["agent"]),
+          agent: typeof meta["agent"] === "string" ? meta["agent"] : undefined,
           run: typeof meta["run"] === "string" ? meta["run"] : undefined,
           idempotencyKey: typeof meta["idempotencyKey"] === "string" ? meta["idempotencyKey"] : undefined,
           signal: ctx.mcpReq.signal,

@@ -240,23 +240,23 @@ test("tells a tool which agent and run a call is for", async () => {
     name: "whose",
     arguments: {},
     _meta: {
-      agent: { key: "agt_01JF8X7ZK4" },
+      agent: "agt_01JF8X7ZK4",
       run: "4bf92f3577b34da6a3ce929d0e0e4736",
     },
   });
   await peer.request("tools/call", {
     name: "whose",
     arguments: {},
-    _meta: { agent: { key: "agt_01JF8X5RQ2" } },
+    _meta: { agent: "agt_01JF8X5RQ2" },
   });
   await peer.request("tools/call", { name: "whose", arguments: {} });
 
   assert.deepEqual(seen, [
     {
-      agent: { key: "agt_01JF8X7ZK4" },
+      agent: "agt_01JF8X7ZK4",
       run: "4bf92f3577b34da6a3ce929d0e0e4736",
     },
-    { agent: { key: "agt_01JF8X5RQ2" }, run: undefined },
+    { agent: "agt_01JF8X5RQ2", run: undefined },
     { agent: undefined, run: undefined },
   ]);
 

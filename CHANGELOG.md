@@ -18,7 +18,9 @@
 - Pass a conversation as `conversation`, not as part of the agent ID.
 - `agents.list`, `agents.forget`, `agents.cancel`, `interrupts.list`, `events.list`, `events.head`
   and `wardrik.listen` filter by `agents`, a list of agent IDs, in place of `resources`.
-- `ToolContext.agent` is `{ key }`, the agent's ID. `org`, `user` and `name` are gone.
+- `ToolContext.agent` is the calling agent's ID, a string. `CallingAgent` is gone.
+- `events.list` and `agent.events` pages hold `WardrikEvent`s, typed by `type`, as streams do.
+- The `wardrik.ceiling.reached` event type is gone.
 - An agent definition's `workspace.shared` entries name an `agent`, not a `tree`.
 - `agents.list` items and `agent.read`'s `agent` have no `name`.
 

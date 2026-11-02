@@ -292,7 +292,7 @@ export interface AgentAnswer {
   agent: AgentSummary;
 }
 /**
- * What agent.define takes, and agent.definition answers: what an agent is, and what it may do. An agent file's frontmatter takes the same keys, with its body as instructions, and name, org and user besides.
+ * What agent.define takes, and agent.definition answers: what an agent is, and what it may do.
  */
 export interface AgentDefinition {
   /**
@@ -312,7 +312,7 @@ export interface AgentDefinition {
    */
   model?: string;
   /**
-   * What the agent may call: a tool the server ships, by name; files for the file tools over the agent's own tree and the trees it shares; server/* for every tool of an MCP server; workers/* for every tool the connected tool workers offer it; self/* for its operations on itself; agents/* for its operations on the agents of its org; or * for all of them.
+   * What the agent may call: a tool the server ships, by name; files for the file tools over the agent's own tree and the trees it shares; server/* for every tool of an MCP server; workers/* for every tool the connected tool workers offer it; self/* for its operations on itself; agents/* for its operations on other agents; or * for all of them.
    */
   tools?: string[];
   /**
@@ -436,14 +436,14 @@ export interface AgentDefinition {
     [k: string]: unknown;
   }[];
   /**
-   * Who hears when the agent parks, fails or answers: a target config.yaml's notify names or a room in a channel, as slack:#updates; a list of them; or to and on. A target tells only the agents of the orgs it serves, and a room is posted in a workspace of the agent's own owner.
+   * Who hears when the agent parks, fails or answers: a target its resolver names or a room in a channel, as slack:#updates; a list of them; or to and on. A room is posted in the workspace its resolver gives the channel.
    */
   notify?:
     | string
     | string[]
     | {
         /**
-         * The targets, as config.yaml's notify names them, and rooms in channels, as slack:#updates.
+         * The targets, as its resolver names them, and rooms in channels, as slack:#updates.
          */
         to: string | string[];
         /**
@@ -452,7 +452,7 @@ export interface AgentDefinition {
         on?: ("parked" | "failed" | "finished")[];
       };
   /**
-   * The chat channels, as config.yaml names them, it may be chosen to answer in.
+   * The chat channels, by name, it may be chosen to answer in.
    */
   channels?: string[];
 }
@@ -592,7 +592,7 @@ export interface Cancelled {
   cancelled: string[];
 }
 /**
- * What channel.deliver takes: the request a chat app sent, its raw body and its headers, with lowercase names. The surface that receives it passes them on as they came, since a signature covers the exact body.
+ * What channel.deliver takes: the request a chat app sent, as its raw body and its headers by lowercase name. Over HTTP, a chat app sends the request itself, and Wardrik reads this from it.
  */
 export interface ChannelRequest {
   /**
@@ -607,7 +607,7 @@ export interface ChannelRequest {
   };
 }
 /**
- * What channel.deliver answers: the response the chat app expects, which a surface sends as it is, in place of JSON of its own.
+ * What channel.deliver answers: the response the chat app expects. Over HTTP, it is sent as the response itself.
  */
 export interface ChannelResponse {
   status: number;
@@ -703,7 +703,7 @@ export interface Events {
   /**
    * Each event's agent and conversation name its log, and its sequence its place in that log. Where a log was trimmed past the cursor, a wardrik.events.dropped says so.
    */
-  events: CloudEvent[];
+  events: WardrikEvent[];
   /**
    * The cursor after these events, to read on from.
    */
@@ -724,7 +724,7 @@ export interface Forgotten {
   }[];
 }
 /**
- * What hook.deliver takes: the request a service sent, its raw body and its headers, with lowercase names. The surface that receives it passes them on as they came, since a signature covers the exact body.
+ * What hook.deliver takes: the request a service sent, as its raw body and its headers by lowercase name. Over HTTP, a service sends the request itself, and Wardrik reads this from it.
  */
 export interface HookRequest {
   /**
@@ -1098,21 +1098,6 @@ export interface CallKilledData {
   };
   actor?: Principal;
   assumed_by?: AssumedBy;
-}
-/**
- * A call of the agent's took its org's agents to a ceiling's limit, which they spend from together.
- */
-export interface CeilingReachedData {
-  org: string;
-  /**
-   * The ceiling's name.
-   */
-  ceiling: string;
-  /**
-   * What the org's next model call does: waits on a ceiling_approval, is refused, or runs.
-   */
-  on_exhausted: "ask" | "deny" | "continue";
-  message: string;
 }
 /**
  * The conversation was emptied, and with it the mark of content from outside it held.
@@ -1618,7 +1603,6 @@ export interface EventData {
   "wardrik.agent.stopped": AgentStoppedData;
   "wardrik.agents.reloaded": AgentsReloadedData;
   "wardrik.call.killed": CallKilledData;
-  "wardrik.ceiling.reached": CeilingReachedData;
   "wardrik.conversation.cleared": ConversationClearedData;
   "wardrik.conversation.compacted": ConversationCompactedData;
   "wardrik.events.dropped": EventsDroppedData;

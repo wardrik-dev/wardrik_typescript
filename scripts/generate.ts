@@ -92,8 +92,16 @@ const eventMap = events.map((type) => `  "wardrik.${type}": ${eventTitle(type)};
 const referenced = / \*\n \* This interface was referenced by `Protocol`'s JSON-Schema\n \* via the `definition` "[^"]+"\.\n/g;
 const alone = /\/\*\*\n \* This interface was referenced by `Protocol`'s JSON-Schema\n \* via the `definition` "[^"]+"\.\n \*\/\n/g;
 
+// A page's events are typed by their type, as a stream's are.
+const page = /(export interface Events \{\n(?:.*\n)*?  events: )CloudEvent\[\];/;
+if (!page.test(compiled)) throw new Error("Events has no `events: CloudEvent[]` to type by event");
+
 const protocol =
-  compiled.replace(alone, "").replace(referenced, "").replace(/export interface Protocol \{\}\n\n?/, "") +
+  compiled
+    .replace(alone, "")
+    .replace(referenced, "")
+    .replace(/export interface Protocol \{\}\n\n?/, "")
+    .replace(page, "$1WardrikEvent[];") +
   `
 /** Each event type, and the data its events carry. */
 export interface EventData {

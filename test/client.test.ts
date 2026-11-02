@@ -131,6 +131,8 @@ describe("an agent", () => {
     const page = await agent.events({ after: "c4", limit: 10 });
 
     assert.equal(page.events[0]!.sequence, "000000000005");
+    const types: WardrikEvent["type"][] = page.events.map((event) => event.type);
+    assert.deepEqual(types, ["wardrik.run.started"]);
     assert.equal(page.next, "c5");
     assert.deepEqual(sent(), [
       ["PUT", path, { model: "anthropic:claude-sonnet-4-5" }],
