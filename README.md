@@ -185,7 +185,7 @@ may serve whose tools include `workers/*`.
 
 Its second argument is a `ToolContext`:
 
-* `agent` - the agent the call is for, `{ key, org, user?, name }`. The server sets it, never
+* `agent` - the agent the call is for, `{ key }`, its ID as your app named it. The server sets it, never
   from what the model sent. A worker serving
   an agent per customer can answer each with only their data.
 * `run` - the run the call is part of.

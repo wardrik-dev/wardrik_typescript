@@ -12,12 +12,8 @@ import type { Http } from "./http.ts";
 
 /** The agent a call is made for. */
 export interface CallingAgent {
-  /** Its ID: `org/name`, or `org/@user/name` for a user's agent. */
+  /** Its ID, exactly as your app named it. Wardrik reads nothing out of it. */
   key: string;
-  org: string;
-  /** The user it works for, if any. */
-  user?: string;
-  name: string;
 }
 
 /** The second argument to a tool's `run`. */
@@ -112,10 +108,8 @@ function answer(value: unknown): CallToolResult {
 function callingAgent(meta: unknown): CallingAgent | undefined {
   if (typeof meta !== "object" || meta === null) return undefined;
 
-  const { key, org, user, name } = meta as Record<string, unknown>;
-  if (typeof key !== "string" || typeof org !== "string" || typeof name !== "string") return undefined;
-
-  return typeof user === "string" ? { key, org, user, name } : { key, org, name };
+  const { key } = meta as Record<string, unknown>;
+  return typeof key === "string" ? { key } : undefined;
 }
 
 function failed(error: unknown): CallToolResult {

@@ -14,6 +14,9 @@
   its own routes.
 - `tokens.*` are gone, and the operations over many agents take `agents`, exact agent IDs, for
   `resources`.
+- A tool call's `agent` is `{ key }`, the agent's ID as your app named it. `org`, `user` and
+  `name` are gone.
+- An agent definition's `workspace.shared` mounts other agents' workspaces, each by `agent` ID.
 
 ## 0.1.0-rc.1 (2026-10-30)
 

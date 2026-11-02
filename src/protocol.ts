@@ -311,17 +311,17 @@ export interface AgentDefinition {
    */
   tools?: string[];
   /**
-   * The trees the agent shares with other agents. Only trees the token's scope covers, and tools names files to reach them.
+   * Other agents' workspaces the agent mounts. Only those its resolver shares, and tools names files to reach them.
    */
   workspace?: {
     /**
-     * The trees shared with the agent, by the name each is seen under at shared/<name>/: a tree, or a tree and a mode, write unless it says read.
+     * Other agents' workspaces the agent mounts, by the name each is seen under at shared/<name>/: an agent's ID, or an ID and a mode. The resolver gives each with read or write access; mode read mounts a write share read only.
      */
     shared?: {
       [k: string]:
         | string
         | {
-            tree: string;
+            agent: string;
             mode?: "read" | "write";
           };
     };
