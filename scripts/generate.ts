@@ -1,6 +1,7 @@
 // Writes src/protocol.ts and src/operations.ts from wardrik_protocol's priv/v1: the types of
-// every schema, and a method for every operation openapi.json defines. With --check, fails
-// instead where either file is not what the protocol makes.
+// every schema, and a method for every operation openapi.json defines. A path item with no
+// operationId is the conversation route of the operation its x-wardrik-operation names. With
+// --check, fails instead where either file is not what the protocol makes.
 
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { compile, type JSONSchema } from "json-schema-to-typescript";
@@ -131,6 +132,8 @@ interface Operation {
   id: string;
   method: string;
   path: string;
+  /** The route that acts on a conversation, where the operation has one. */
+  conversation: string | undefined;
   summary: string;
   description: string | undefined;
   params: Param[];
@@ -179,10 +182,16 @@ const bodyRequired = (ref: string, required: boolean): boolean => {
 };
 
 const operations: Operation[] = [];
+const conversationRoutes = new Map<string, { method: string; path: string }>();
 
 for (const [path, methods] of Object.entries(openapi.paths as Record<string, Schema>)) {
   for (const [method, operation] of Object.entries(methods)) {
     if (!offered(operation["x-wardrik-subject"])) continue;
+
+    if (operation.operationId === undefined) {
+      conversationRoutes.set(operation["x-wardrik-operation"], { method: method.toUpperCase(), path });
+      continue;
+    }
 
     const output = answered(operation);
     const body = operation.requestBody?.content["application/json"].schema.$ref as string | undefined;
@@ -192,6 +201,7 @@ for (const [path, methods] of Object.entries(openapi.paths as Record<string, Sch
       id: operation.operationId,
       method: method.toUpperCase(),
       path,
+      conversation: undefined,
       summary: operation.summary,
       description: operation.description,
       params: (operation.parameters ?? []).map(param),
@@ -203,6 +213,20 @@ for (const [path, methods] of Object.entries(openapi.paths as Record<string, Sch
     });
   }
 }
+
+for (const [id, route] of conversationRoutes) {
+  const operation = operations.find((operation) => operation.id === id);
+  if (operation === undefined) throw new Error(`${route.path} is the conversation route of ${id}, which no operation is`);
+  if (operation.method !== route.method) throw new Error(`${route.path} takes ${route.method}, and ${id} ${operation.method}`);
+  operation.conversation = route.path;
+}
+
+// The conversation an operation acts on, where it may act on one: left out for the agent's own.
+const conversation: Param = {
+  ...param({ $ref: "#/components/parameters/conversation" }),
+  required: false,
+  description: "The conversation to act on. The agent's own history where left out.",
+};
 
 const pathParams = (operation: Operation): Param[] =>
   [...operation.path.matchAll(/\{([a-z_]+)\}/g)].map(([, name]) => operation.params.find((param) => param.name === name)!);
@@ -235,6 +259,7 @@ const table = operations
     const entry = {
       method: operation.method,
       path: operation.path,
+      ...(operation.conversation ? { conversation: operation.conversation } : {}),
       path_params: pathParams(operation).map((param) => param.name),
       query: queryParams(operation).map((param) => param.name),
       body: operation.body !== undefined,
@@ -246,18 +271,26 @@ const table = operations
   .join("\n");
 
 const inputs = operations
-  .map((operation) => `  ${JSON.stringify(operation.id)}: ${inputType(operation, operation.params)};`)
+  .map((operation) => {
+    const params = operation.conversation ? [...operation.params, conversation] : operation.params;
+    return `  ${JSON.stringify(operation.id)}: ${inputType(operation, params)};`;
+  })
   .join("\n");
 
 const outputs = operations.map((operation) => `  ${JSON.stringify(operation.id)}: ${outputType(operation)};`).join("\n");
 
-const doc = (operation: Operation, indent: string): string => {
-  const lines = [operation.summary + ".", ...(operation.description ? ["", operation.description] : [])];
+const doc = (operation: Operation, indent: string, note?: string): string => {
+  const lines = [
+    operation.summary + ".",
+    ...(operation.description ? ["", operation.description] : []),
+    ...(note ? ["", note] : []),
+  ];
   return `${indent}/**\n${lines.map((line) => `${indent} *${line ? " " + line : ""}`).join("\n")}\n${indent} */\n`;
 };
 
 // A method of a namespace: path parameters by position, but those `bound` to the namespace,
-// then the rest of the input as one object.
+// then the rest of the input as one object. An agent's operations that may act on a conversation
+// act on the one the namespace is bound to.
 const signature = (operation: Operation, bound: string[], query: Param[]) => {
   const positional = pathParams(operation).filter((param) => !bound.includes(param.name));
   const rest = inputType(operation, query);
@@ -268,18 +301,23 @@ const signature = (operation: Operation, bound: string[], query: Param[]) => {
   const assigned = [
     ...(rest !== "{}" ? ["...input"] : []),
     ...bound.filter((name) => operation.path.includes(`{${name}}`)).map((name) => `${name}: this.${camel(name)}`),
+    ...(operation.conversation && bound.includes("agent") ? ["conversation: this.conversation"] : []),
     ...positional.map((param) => (param.name === camel(param.name) ? param.name : `${param.name}: ${camel(param.name)}`)),
   ];
 
   return { args, value: assigned.length === 0 ? "{}" : `{ ${assigned.join(", ")} }` };
 };
 
+// What an agent's operation that can't act on a conversation says it does on one.
+const agentOnly = (operation: Operation, bound: string[]): string | undefined =>
+  bound.includes("agent") && !operation.conversation ? "Acts on the agent, whatever `conversation` is." : undefined;
+
 const call = (operation: Operation, name: string, bound: string[]): string => {
   const { args, value } = signature(operation, bound, queryParams(operation));
   const id = JSON.stringify(operation.id);
 
   return (
-    doc(operation, "  ") +
+    doc(operation, "  ", agentOnly(operation, bound)) +
     `  ${name}(${[...args, "options: CallOptions = {}"].join(", ")}): Promise<Outputs[${id}]> {\n` +
     `    return this.#runner.call(${id}, ${value}, options);\n  }\n`
   );
@@ -313,9 +351,14 @@ const namespace = (prefix: string): string => {
     .map((operation) => method(operation, prefix, bound))
     .join("\n");
 
-  const field = prefix === "agent" ? "  /** The agent's ID, as acme/triage or acme/@jon/triage. */\n  readonly agent: string;\n" : "";
-  const init = prefix === "agent" ? "    this.agent = agent;\n" : "";
-  const args = prefix === "agent" ? "runner: Runner, agent: string" : "runner: Runner";
+  const field =
+    prefix === "agent"
+      ? "  /** The agent's ID, as your app chose it. */\n  readonly agent: string;\n" +
+        "  /** The conversation its operations act on. The agent's own history where undefined. */\n" +
+        "  readonly conversation: string | undefined;\n"
+      : "";
+  const init = prefix === "agent" ? "    this.agent = agent;\n    this.conversation = conversation;\n" : "";
+  const args = prefix === "agent" ? "runner: Runner, agent: string, conversation?: string | undefined" : "runner: Runner";
 
   return (
     `/** The \`${prefix}.*\` operations. */\nexport class ${pascal(prefix)}Operations {\n${field}  readonly #runner: Runner;\n\n` +

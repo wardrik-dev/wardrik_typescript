@@ -19,12 +19,12 @@ const wardrik = new Wardrik();
 Options, each optional:
 
 * `url` - the server. `WARDRIK_URL` unless set, else `http://127.0.0.1:4747`.
-* `token` - the bearer credential, whatever the host's authenticator takes. `WARDRIK_TOKEN` unless
+* `token` - the bearer credential, whatever your app's authenticator takes. `WARDRIK_TOKEN` unless
   set. Throws a `TypeError` if neither is given.
 * `fetch` - the `fetch` to use. The global one unless set.
 * `name` - this process's name as a tool worker. `"wardrik-sdk"` unless set.
 
-The SDK sends `token` as `Authorization: Bearer`. The host's authenticator decides who it is, and
+The SDK sends `token` as `Authorization: Bearer`. Your app's authenticator decides who it is, and
 its authorizer what they may do.
 
 * A credential the authenticator refuses throws a `WardrikError` of type `unauthorized`.
@@ -42,7 +42,7 @@ what the server does.
   protocol's field names.
 
 ```ts
-const agent = wardrik.agent("acme/triage");
+const agent = wardrik.agent("agt_01JF8X5RQ2");
 
 await agent.define({
   model: "anthropic:claude-sonnet-4-5",
@@ -53,7 +53,7 @@ await agent.define({
 await agent.triggerSet("sweep", { every: "*/30 * * * *", prompt: "Check the queue." });
 await agent.approve("call_1", { note: "Go ahead." });
 
-const agents = await wardrik.agents.list({ agents: ["acme/triage", "acme/@jon/notes"] });
+const agents = await wardrik.agents.list({ agents: ["agt_01JF8X5RQ2", "agt_01JF8X7ZK4"] });
 ```
 
 An output with one property resolves to that property: `agents.list` resolves to the list,
@@ -62,11 +62,33 @@ An output with one property resolves to that property: `agents.list` resolves to
 `wardrik.run(id, input)` runs any operation by its ID, with path parameters in the input:
 
 ```ts
-await wardrik.run("agent.ask", { agent: "acme/triage", content: "Hi" });
+await wardrik.run("agent.ask", { agent: "agt_01JF8X5RQ2", content: "Hi" });
 ```
 
-Agent IDs are `org/name`, or `org/@user/name` for a user's agent. A conversation, like one a
-channel starts for a thread, adds one segment: `acme/triage/C1-1696.1234`.
+An agent's ID is whatever your app chose for it. The SDK never reads it, and sends it as one
+URL-encoded path segment.
+
+## Conversations
+
+A conversation runs on its agent's definition, with a history of its own. A chat thread is one.
+Pass its ID, as your app chose it, to address it:
+
+```ts
+const thread = wardrik.agent("agt_01JF8X5RQ2", { conversation: "C1-1696.1234" });
+
+const reply = await thread.reply("Is the deploy done?");
+await thread.clear();
+```
+
+* `stream` and `reply` follow the conversation's own events.
+* `read`, `ask`, `approve`, `events` and the other operations that can act on a conversation act
+  on this one.
+* `define`, `forget`, `spawn` and the trigger operations act on the agent.
+* `wardrik.run` takes `conversation` in the input:
+  `wardrik.run("agent.ask", { agent, conversation, content })`.
+
+`agents.list` and `interrupts.list` give each item's `conversation`, and every event carries its
+`agent` and `conversation`. The `agents` filter covers each agent's conversations too.
 
 ## Asking
 
@@ -131,7 +153,7 @@ await wardrik.listen(
       });
     },
   },
-  { agents: ["acme/triage"], after: await db.cursor("runs") },
+  { agents: ["agt_01JF8X5RQ2"], after: await db.cursor("runs") },
 );
 ```
 
@@ -146,7 +168,7 @@ with `agent.events` or `wardrik.events.list` until one is empty:
 let after = saved;
 
 for (;;) {
-  const page = await wardrik.events.list({ agents: ["acme/triage"], after, limit: 500 });
+  const page = await wardrik.events.list({ agents: ["agt_01JF8X5RQ2"], after, limit: 500 });
   for (const event of page.events) await save(event);
   if (page.events.length === 0) break;
   after = page.next;

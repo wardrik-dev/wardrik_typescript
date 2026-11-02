@@ -26,7 +26,7 @@ export type Handlers = {
 
 /** Options for `wardrik.listen`. */
 export interface ListenOptions {
-  /** The agents to follow, by ID, as `"acme/triage"`. Every agent the caller reaches unless set. */
+  /** The agents to follow, by ID, each with its conversations. Every agent the caller reaches unless set. */
   agents?: string[] | undefined;
   /** The cursor to resume after. The next event written unless set. */
   after?: string | undefined;

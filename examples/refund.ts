@@ -2,7 +2,7 @@
 //
 //   WARDRIK_TOKEN=… WARDRIK_MODEL=anthropic:claude-sonnet-4-5 node examples/refund.ts
 //
-// WARDRIK_TOKEN is whatever the host's authenticator takes.
+// WARDRIK_TOKEN is whatever your app's authenticator takes.
 
 import { z } from "zod";
 import { Wardrik } from "../src/index.ts";
@@ -23,7 +23,7 @@ wardrik.tool({
 
 const working = wardrik.work({ signal: stop.signal });
 
-const agent = wardrik.agent("acme/refunds");
+const agent = wardrik.agent("refunds");
 await agent.define({
   model: process.env.WARDRIK_MODEL ?? "anthropic:claude-sonnet-4-5",
   instructions: "You refund orders when asked, with refund_order, and say what you did.",

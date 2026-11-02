@@ -26,19 +26,29 @@ const runOf = (event: WardrikEvent): string | undefined => event.traceparent.spl
 
 const asked = (input: string | Ask, id: string): Ask => (typeof input === "string" ? { id, content: input } : { ...input, id });
 
+/** Options for `wardrik.agent`. */
+export interface AgentOptions {
+  /**
+   * A conversation of the agent, by your app's ID for it. It runs on the agent's definition, with a
+   * history of its own. The agent's own history unless set.
+   */
+  conversation?: string | undefined;
+}
+
 /**
- * One agent, by its ID: `org/name`, `org/@user/name`, or a conversation of either.
+ * One agent, by your app's ID for it, or one of its conversations.
  *
  * Its methods are the protocol's `agent.*` operations, one request each. Nothing is fetched until
- * one is called. `stream` and `reply` also follow the run that answers a message.
+ * one is called. Those that can act on a conversation act on `conversation`. `stream` and `reply`
+ * also follow the run that answers a message.
  */
 export class Agent extends AgentOperations {
   readonly #runner: Runner;
 
   /** @internal */
-  constructor(http: Http, agent: string) {
+  constructor(http: Http, agent: string, options: AgentOptions = {}) {
     const runner = new Runner(http);
-    super(runner, agent);
+    super(runner, agent, options.conversation);
     this.#runner = runner;
   }
 
@@ -64,7 +74,9 @@ export class Agent extends AgentOperations {
     const { cursor } = await this.ask(asked(input, id), { signal: options.signal });
     let run: string | undefined;
 
-    for await (const event of this.#runner.stream("agent.events", { agent: this.agent, after: cursor }, options)) {
+    const from = { agent: this.agent, conversation: this.conversation, after: cursor };
+
+    for await (const event of this.#runner.stream("agent.events", from, options)) {
       if (event.type === "wardrik.message.created" && event.data.message.id === id) {
         yield event;
       } else if (event.type === "wardrik.run.started" && event.data.run.message_ids?.includes(id)) {

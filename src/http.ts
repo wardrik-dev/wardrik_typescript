@@ -62,32 +62,3 @@ export class Http {
     return this.url + path + search;
   }
 }
-
-const segment = (text: string): string => encodeURIComponent(text).replace(/^%40/, "@");
-
-/**
- * Returns an agent's ID as a URL path.
- *
- * Each segment is percent-encoded on its own, keeping a user's leading `@`. A conversation goes
- * after `conversations/`, as `acme/triage/conversations/C1`. Throws a `TypeError` for a malformed
- * ID.
- */
-export function agentPath(id: string): string {
-  const segments = id.split("/");
-  const user = segments[1]?.startsWith("@") ?? false;
-  const key = segments.slice(0, user ? 3 : 2);
-  const conversation = segments.slice(key.length);
-
-  const malformed =
-    key.length < (user ? 3 : 2) ||
-    conversation.length > 1 ||
-    segments.some((part) => part === "" || part === "@") ||
-    key.at(-1)!.startsWith("@");
-
-  if (malformed) {
-    throw new TypeError(`An agent's ID is org/name or org/@user/name, and a conversation's one more segment; got ${JSON.stringify(id)}`);
-  }
-
-  const path = key.map(segment).join("/");
-  return conversation.length === 0 ? path : path + "/conversations/" + segment(conversation[0]!);
-}

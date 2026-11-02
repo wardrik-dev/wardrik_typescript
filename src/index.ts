@@ -1,4 +1,4 @@
-export { Agent, type Reply, type StreamAskOptions } from "./agent.ts";
+export { Agent, type AgentOptions, type Reply, type StreamAskOptions } from "./agent.ts";
 export { Wardrik, version, type WardrikOptions } from "./client.ts";
 export { WardrikError } from "./errors.ts";
 export { EventStream, type Handlers, type ListenOptions } from "./events.ts";

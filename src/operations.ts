@@ -75,6 +75,7 @@ export const operations = {
   "agent.read": {
     method: "GET",
     path: "/v1/agents/{agent}",
+    conversation: "/v1/agents/{agent}/conversations/{conversation}",
     path_params: ["agent"],
     query: [],
     body: false,
@@ -96,6 +97,7 @@ export const operations = {
   "agent.ask": {
     method: "POST",
     path: "/v1/agents/{agent}/messages",
+    conversation: "/v1/agents/{agent}/conversations/{conversation}/messages",
     path_params: ["agent"],
     query: [],
     body: true,
@@ -104,6 +106,7 @@ export const operations = {
   "agent.decide": {
     method: "POST",
     path: "/v1/agents/{agent}/decisions",
+    conversation: "/v1/agents/{agent}/conversations/{conversation}/decisions",
     path_params: ["agent"],
     query: [],
     body: true,
@@ -112,6 +115,8 @@ export const operations = {
   "agent.authorization": {
     method: "GET",
     path: "/v1/agents/{agent}/interrupts/{interrupt}/authorization",
+    conversation:
+      "/v1/agents/{agent}/conversations/{conversation}/interrupts/{interrupt}/authorization",
     path_params: ["agent", "interrupt"],
     query: [],
     body: false,
@@ -119,6 +124,7 @@ export const operations = {
   "agent.cancel": {
     method: "POST",
     path: "/v1/agents/{agent}/cancel",
+    conversation: "/v1/agents/{agent}/conversations/{conversation}/cancel",
     path_params: ["agent"],
     query: [],
     body: false,
@@ -126,6 +132,7 @@ export const operations = {
   "agent.events": {
     method: "GET",
     path: "/v1/agents/{agent}/events",
+    conversation: "/v1/agents/{agent}/conversations/{conversation}/events",
     path_params: ["agent"],
     query: ["types", "after", "limit"],
     body: false,
@@ -134,6 +141,7 @@ export const operations = {
   "agent.timeline": {
     method: "GET",
     path: "/v1/agents/{agent}/timeline",
+    conversation: "/v1/agents/{agent}/conversations/{conversation}/timeline",
     path_params: ["agent"],
     query: [],
     body: false,
@@ -141,6 +149,7 @@ export const operations = {
   "agent.runs": {
     method: "GET",
     path: "/v1/agents/{agent}/runs",
+    conversation: "/v1/agents/{agent}/conversations/{conversation}/runs",
     path_params: ["agent"],
     query: [],
     body: false,
@@ -155,6 +164,7 @@ export const operations = {
   "agent.approve": {
     method: "POST",
     path: "/v1/agents/{agent}/interrupts/{interrupt}/approve",
+    conversation: "/v1/agents/{agent}/conversations/{conversation}/interrupts/{interrupt}/approve",
     path_params: ["agent", "interrupt"],
     query: [],
     body: true,
@@ -163,6 +173,7 @@ export const operations = {
   "agent.deny": {
     method: "POST",
     path: "/v1/agents/{agent}/interrupts/{interrupt}/deny",
+    conversation: "/v1/agents/{agent}/conversations/{conversation}/interrupts/{interrupt}/deny",
     path_params: ["agent", "interrupt"],
     query: [],
     body: true,
@@ -194,6 +205,7 @@ export const operations = {
   "agent.stop": {
     method: "POST",
     path: "/v1/agents/{agent}/stop",
+    conversation: "/v1/agents/{agent}/conversations/{conversation}/stop",
     path_params: ["agent"],
     query: [],
     body: false,
@@ -202,6 +214,7 @@ export const operations = {
   "agent.clear": {
     method: "DELETE",
     path: "/v1/agents/{agent}/conversation",
+    conversation: "/v1/agents/{agent}/conversations/{conversation}",
     path_params: ["agent"],
     query: [],
     body: false,
@@ -209,6 +222,7 @@ export const operations = {
   "agent.calls": {
     method: "GET",
     path: "/v1/agents/{agent}/calls",
+    conversation: "/v1/agents/{agent}/conversations/{conversation}/calls",
     path_params: ["agent"],
     query: [],
     body: false,
@@ -217,6 +231,7 @@ export const operations = {
   "agent.kill": {
     method: "DELETE",
     path: "/v1/agents/{agent}/calls/{call}",
+    conversation: "/v1/agents/{agent}/conversations/{conversation}/calls/{call}",
     path_params: ["agent", "call"],
     query: [],
     body: false,
@@ -252,6 +267,7 @@ export const operations = {
   "agent.move": {
     method: "POST",
     path: "/v1/agents/{agent}/move",
+    conversation: "/v1/agents/{agent}/conversations/{conversation}/move",
     path_params: ["agent"],
     query: [],
     body: true,
@@ -265,19 +281,19 @@ export type OperationId = keyof typeof operations;
 /** What each operation takes: its path and query parameters and its body, as one object. */
 export interface Inputs {
   "agents.list": {
-    /** The agents to cover, by ID, as acme/triage or acme/@jon/triage, given once for each. Every agent the caller reaches where left out. */
+    /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent the caller reaches where left out. */
     agents?: string[] | undefined;
   };
   "agents.forget": {
-    /** The agents to cover, by ID, as acme/triage or acme/@jon/triage, given once for each. Every agent the caller reaches where left out. */
+    /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent the caller reaches where left out. */
     agents?: string[] | undefined;
   };
   "interrupts.list": {
-    /** The agents to cover, by ID, as acme/triage or acme/@jon/triage, given once for each. Every agent the caller reaches where left out. */
+    /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent the caller reaches where left out. */
     agents?: string[] | undefined;
   };
   "events.list": {
-    /** The agents to cover, by ID, as acme/triage or acme/@jon/triage, given once for each. Every agent the caller reaches where left out. */
+    /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent the caller reaches where left out. */
     agents?: string[] | undefined;
     /** The event types to read, as wardrik.run.completed, given once for each. Every type where left out. A wardrik.events.dropped comes whatever the types. */
     types?: string[] | undefined;
@@ -287,41 +303,51 @@ export interface Inputs {
     limit?: number | undefined;
   };
   "events.head": {
-    /** The agents to cover, by ID, as acme/triage or acme/@jon/triage, given once for each. Every agent the caller reaches where left out. */
+    /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent the caller reaches where left out. */
     agents?: string[] | undefined;
   };
   "agent.read": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
+    /** The agent's ID, as your app chose it, in one URL-encoded path segment. */
     agent: string;
+    /** The conversation to act on. The agent's own history where left out. */
+    conversation?: string | undefined;
   };
   "agent.define": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
+    /** The agent's ID, as your app chose it, in one URL-encoded path segment. */
     agent: string;
   } & AgentDefinition;
   "agent.forget": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
+    /** The agent's ID, as your app chose it, in one URL-encoded path segment. */
     agent: string;
   };
   "agent.ask": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
+    /** The agent's ID, as your app chose it, in one URL-encoded path segment. */
     agent: string;
+    /** The conversation to act on. The agent's own history where left out. */
+    conversation?: string | undefined;
   } & Ask;
   "agent.decide": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
+    /** The agent's ID, as your app chose it, in one URL-encoded path segment. */
     agent: string;
+    /** The conversation to act on. The agent's own history where left out. */
+    conversation?: string | undefined;
   } & Decisions;
   "agent.authorization": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
+    /** The agent's ID, as your app chose it, in one URL-encoded path segment. */
     agent: string;
     /** The id of the call the agent waits on. */
     interrupt: string;
+    /** The conversation to act on. The agent's own history where left out. */
+    conversation?: string | undefined;
   };
   "agent.cancel": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
+    /** The agent's ID, as your app chose it, in one URL-encoded path segment. */
     agent: string;
+    /** The conversation to act on. The agent's own history where left out. */
+    conversation?: string | undefined;
   };
   "agent.events": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
+    /** The agent's ID, as your app chose it, in one URL-encoded path segment. */
     agent: string;
     /** The event types to read, as wardrik.run.completed, given once for each. Every type where left out. A wardrik.events.dropped comes whatever the types. */
     types?: string[] | undefined;
@@ -329,14 +355,20 @@ export interface Inputs {
     after?: string | undefined;
     /** How many to read, 100 unless set. */
     limit?: number | undefined;
+    /** The conversation to act on. The agent's own history where left out. */
+    conversation?: string | undefined;
   };
   "agent.timeline": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
+    /** The agent's ID, as your app chose it, in one URL-encoded path segment. */
     agent: string;
+    /** The conversation to act on. The agent's own history where left out. */
+    conversation?: string | undefined;
   };
   "agent.runs": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
+    /** The agent's ID, as your app chose it, in one URL-encoded path segment. */
     agent: string;
+    /** The conversation to act on. The agent's own history where left out. */
+    conversation?: string | undefined;
   };
   "audit.list": {
     /** The sequence to read after, a page's next. */
@@ -345,67 +377,81 @@ export interface Inputs {
     limit?: number | undefined;
   };
   "agent.approve": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
+    /** The agent's ID, as your app chose it, in one URL-encoded path segment. */
     agent: string;
     /** The id of the call the agent waits on. */
     interrupt: string;
+    /** The conversation to act on. The agent's own history where left out. */
+    conversation?: string | undefined;
   } & Approve;
   "agent.deny": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
+    /** The agent's ID, as your app chose it, in one URL-encoded path segment. */
     agent: string;
     /** The id of the call the agent waits on. */
     interrupt: string;
+    /** The conversation to act on. The agent's own history where left out. */
+    conversation?: string | undefined;
   } & Deny;
   "agents.cancel": {
-    /** The agents to cover, by ID, as acme/triage or acme/@jon/triage, given once for each. Every agent the caller reaches where left out. */
+    /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent the caller reaches where left out. */
     agents?: string[] | undefined;
   };
   "agent.definition": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
+    /** The agent's ID, as your app chose it, in one URL-encoded path segment. */
     agent: string;
   };
   "agent.spawn": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
+    /** The agent's ID, as your app chose it, in one URL-encoded path segment. */
     agent: string;
   };
   "agent.stop": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
+    /** The agent's ID, as your app chose it, in one URL-encoded path segment. */
     agent: string;
+    /** The conversation to act on. The agent's own history where left out. */
+    conversation?: string | undefined;
   };
   "agent.clear": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
+    /** The agent's ID, as your app chose it, in one URL-encoded path segment. */
     agent: string;
+    /** The conversation to act on. The agent's own history where left out. */
+    conversation?: string | undefined;
   };
   "agent.calls": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
+    /** The agent's ID, as your app chose it, in one URL-encoded path segment. */
     agent: string;
+    /** The conversation to act on. The agent's own history where left out. */
+    conversation?: string | undefined;
   };
   "agent.kill": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
+    /** The agent's ID, as your app chose it, in one URL-encoded path segment. */
     agent: string;
     /** The id of the tool call. */
     call: string;
+    /** The conversation to act on. The agent's own history where left out. */
+    conversation?: string | undefined;
   };
   "agent.trigger_set": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
+    /** The agent's ID, as your app chose it, in one URL-encoded path segment. */
     agent: string;
     /** The trigger's name. */
     trigger: string;
   } & TriggerDefinition;
   "agent.trigger_remove": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
+    /** The agent's ID, as your app chose it, in one URL-encoded path segment. */
     agent: string;
     /** The trigger's name. */
     trigger: string;
   };
   "deployment.reload": {
-    /** The agents to cover, by ID, as acme/triage or acme/@jon/triage, given once for each. Every agent the caller reaches where left out. */
+    /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent the caller reaches where left out. */
     agents?: string[] | undefined;
   };
   "deployment.nodes": {};
   "agent.move": {
-    /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
+    /** The agent's ID, as your app chose it, in one URL-encoded path segment. */
     agent: string;
+    /** The conversation to act on. The agent's own history where left out. */
+    conversation?: string | undefined;
   } & Node;
 }
 
@@ -445,27 +491,36 @@ export interface Outputs {
 
 /** The `agent.*` operations. */
 export class AgentOperations {
-  /** The agent's ID, as acme/triage or acme/@jon/triage. */
+  /** The agent's ID, as your app chose it. */
   readonly agent: string;
+  /** The conversation its operations act on. The agent's own history where undefined. */
+  readonly conversation: string | undefined;
   readonly #runner: Runner;
 
   /** @internal */
-  constructor(runner: Runner, agent: string) {
+  constructor(runner: Runner, agent: string, conversation?: string | undefined) {
     this.#runner = runner;
     this.agent = agent;
+    this.conversation = conversation;
   }
 
   /**
    * Read what an agent is doing now.
    */
   read(options: CallOptions = {}): Promise<Outputs["agent.read"]> {
-    return this.#runner.call("agent.read", { agent: this.agent }, options);
+    return this.#runner.call(
+      "agent.read",
+      { agent: this.agent, conversation: this.conversation },
+      options,
+    );
   }
 
   /**
    * Define an agent.
    *
    * Starts the agent the definition describes, or brings the one running to it from its next turn. A definition put again replaces the last. A key nothing here supports yet answers not_supported, naming it.
+   *
+   * Acts on the agent, whatever `conversation` is.
    */
   define(input: AgentDefinition = {}, options: CallOptions = {}): Promise<Outputs["agent.define"]> {
     return this.#runner.call("agent.define", { ...input, agent: this.agent }, options);
@@ -473,6 +528,8 @@ export class AgentOperations {
 
   /**
    * Forget an agent.
+   *
+   * Acts on the agent, whatever `conversation` is.
    */
   forget(options: CallOptions = {}): Promise<Outputs["agent.forget"]> {
     return this.#runner.call("agent.forget", { agent: this.agent }, options);
@@ -482,7 +539,11 @@ export class AgentOperations {
    * Send an agent a message.
    */
   ask(input: Ask, options: CallOptions = {}): Promise<Outputs["agent.ask"]> {
-    return this.#runner.call("agent.ask", { ...input, agent: this.agent }, options);
+    return this.#runner.call(
+      "agent.ask",
+      { ...input, agent: this.agent, conversation: this.conversation },
+      options,
+    );
   }
 
   /**
@@ -491,7 +552,11 @@ export class AgentOperations {
    * The decisions are taken together and recorded as the caller's. A rejection's reason is what the model is told in place of the call's answer. An approval's note is what it reads beside the answer.
    */
   decide(input: Decisions, options: CallOptions = {}): Promise<Outputs["agent.decide"]> {
-    return this.#runner.call("agent.decide", { ...input, agent: this.agent }, options);
+    return this.#runner.call(
+      "agent.decide",
+      { ...input, agent: this.agent, conversation: this.conversation },
+      options,
+    );
   }
 
   /**
@@ -501,14 +566,22 @@ export class AgentOperations {
     interrupt: string,
     options: CallOptions = {},
   ): Promise<Outputs["agent.authorization"]> {
-    return this.#runner.call("agent.authorization", { agent: this.agent, interrupt }, options);
+    return this.#runner.call(
+      "agent.authorization",
+      { agent: this.agent, conversation: this.conversation, interrupt },
+      options,
+    );
   }
 
   /**
    * Stop what an agent is doing.
    */
   cancel(options: CallOptions = {}): Promise<Outputs["agent.cancel"]> {
-    return this.#runner.call("agent.cancel", { agent: this.agent }, options);
+    return this.#runner.call(
+      "agent.cancel",
+      { agent: this.agent, conversation: this.conversation },
+      options,
+    );
   }
 
   /**
@@ -525,7 +598,11 @@ export class AgentOperations {
     } = {},
     options: CallOptions = {},
   ): Promise<Outputs["agent.events"]> {
-    return this.#runner.call("agent.events", { ...input, agent: this.agent }, options);
+    return this.#runner.call(
+      "agent.events",
+      { ...input, agent: this.agent, conversation: this.conversation },
+      options,
+    );
   }
 
   /**
@@ -541,21 +618,33 @@ export class AgentOperations {
     } = {},
     options: StreamOptions = {},
   ): EventStream {
-    return this.#runner.stream("agent.events", { ...input, agent: this.agent }, options);
+    return this.#runner.stream(
+      "agent.events",
+      { ...input, agent: this.agent, conversation: this.conversation },
+      options,
+    );
   }
 
   /**
    * Read an agent's conversation as a person reads it.
    */
   timeline(options: CallOptions = {}): Promise<Outputs["agent.timeline"]> {
-    return this.#runner.call("agent.timeline", { agent: this.agent }, options);
+    return this.#runner.call(
+      "agent.timeline",
+      { agent: this.agent, conversation: this.conversation },
+      options,
+    );
   }
 
   /**
    * Read what an agent's runs did and cost.
    */
   runs(options: CallOptions = {}): Promise<Outputs["agent.runs"]> {
-    return this.#runner.call("agent.runs", { agent: this.agent }, options);
+    return this.#runner.call(
+      "agent.runs",
+      { agent: this.agent, conversation: this.conversation },
+      options,
+    );
   }
 
   /**
@@ -568,7 +657,11 @@ export class AgentOperations {
     input: Approve = {},
     options: CallOptions = {},
   ): Promise<Outputs["agent.approve"]> {
-    return this.#runner.call("agent.approve", { ...input, agent: this.agent, interrupt }, options);
+    return this.#runner.call(
+      "agent.approve",
+      { ...input, agent: this.agent, conversation: this.conversation, interrupt },
+      options,
+    );
   }
 
   /**
@@ -581,11 +674,17 @@ export class AgentOperations {
     input: Deny = {},
     options: CallOptions = {},
   ): Promise<Outputs["agent.deny"]> {
-    return this.#runner.call("agent.deny", { ...input, agent: this.agent, interrupt }, options);
+    return this.#runner.call(
+      "agent.deny",
+      { ...input, agent: this.agent, conversation: this.conversation, interrupt },
+      options,
+    );
   }
 
   /**
    * Read an agent's definition.
+   *
+   * Acts on the agent, whatever `conversation` is.
    */
   definition(options: CallOptions = {}): Promise<Outputs["agent.definition"]> {
     return this.#runner.call("agent.definition", { agent: this.agent }, options);
@@ -593,6 +692,8 @@ export class AgentOperations {
 
   /**
    * Start an agent.
+   *
+   * Acts on the agent, whatever `conversation` is.
    */
   spawn(options: CallOptions = {}): Promise<Outputs["agent.spawn"]> {
     return this.#runner.call("agent.spawn", { agent: this.agent }, options);
@@ -602,7 +703,11 @@ export class AgentOperations {
    * Stop an agent.
    */
   stop(options: CallOptions = {}): Promise<Outputs["agent.stop"]> {
-    return this.#runner.call("agent.stop", { agent: this.agent }, options);
+    return this.#runner.call(
+      "agent.stop",
+      { agent: this.agent, conversation: this.conversation },
+      options,
+    );
   }
 
   /**
@@ -611,7 +716,11 @@ export class AgentOperations {
    * Answers conflict while it runs a turn or waits on a person.
    */
   clear(options: CallOptions = {}): Promise<Outputs["agent.clear"]> {
-    return this.#runner.call("agent.clear", { agent: this.agent }, options);
+    return this.#runner.call(
+      "agent.clear",
+      { agent: this.agent, conversation: this.conversation },
+      options,
+    );
   }
 
   /**
@@ -620,20 +729,30 @@ export class AgentOperations {
    * Answers not_found while the agent sleeps.
    */
   calls(options: CallOptions = {}): Promise<Outputs["agent.calls"]> {
-    return this.#runner.call("agent.calls", { agent: this.agent }, options);
+    return this.#runner.call(
+      "agent.calls",
+      { agent: this.agent, conversation: this.conversation },
+      options,
+    );
   }
 
   /**
    * Stop one tool call.
    */
   kill(call: string, options: CallOptions = {}): Promise<Outputs["agent.kill"]> {
-    return this.#runner.call("agent.kill", { agent: this.agent, call }, options);
+    return this.#runner.call(
+      "agent.kill",
+      { agent: this.agent, conversation: this.conversation, call },
+      options,
+    );
   }
 
   /**
    * Set one of an agent's triggers.
    *
    * Sets or changes one trigger of an agent with a definition, which keeps it; not_found where it has none. A trigger whose every and timezone stay keeps its next run.
+   *
+   * Acts on the agent, whatever `conversation` is.
    */
   triggerSet(
     trigger: string,
@@ -649,6 +768,8 @@ export class AgentOperations {
 
   /**
    * Remove one of an agent's triggers.
+   *
+   * Acts on the agent, whatever `conversation` is.
    */
   triggerRemove(
     trigger: string,
@@ -663,7 +784,11 @@ export class AgentOperations {
    * Starts the agent again on node, as it was. A turn it's taking ends, and what it waits on is abandoned, so ask it again once it's moved.
    */
   move(input: Node, options: CallOptions = {}): Promise<Outputs["agent.move"]> {
-    return this.#runner.call("agent.move", { ...input, agent: this.agent }, options);
+    return this.#runner.call(
+      "agent.move",
+      { ...input, agent: this.agent, conversation: this.conversation },
+      options,
+    );
   }
 }
 
@@ -681,7 +806,7 @@ export class AgentsOperations {
    */
   list(
     input: {
-      /** The agents to cover, by ID, as acme/triage or acme/@jon/triage, given once for each. Every agent the caller reaches where left out. */
+      /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent the caller reaches where left out. */
       agents?: string[] | undefined;
     } = {},
     options: CallOptions = {},
@@ -696,7 +821,7 @@ export class AgentsOperations {
    */
   forget(
     input: {
-      /** The agents to cover, by ID, as acme/triage or acme/@jon/triage, given once for each. Every agent the caller reaches where left out. */
+      /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent the caller reaches where left out. */
       agents?: string[] | undefined;
     } = {},
     options: CallOptions = {},
@@ -709,7 +834,7 @@ export class AgentsOperations {
    */
   cancel(
     input: {
-      /** The agents to cover, by ID, as acme/triage or acme/@jon/triage, given once for each. Every agent the caller reaches where left out. */
+      /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent the caller reaches where left out. */
       agents?: string[] | undefined;
     } = {},
     options: CallOptions = {},
@@ -732,7 +857,7 @@ export class InterruptsOperations {
    */
   list(
     input: {
-      /** The agents to cover, by ID, as acme/triage or acme/@jon/triage, given once for each. Every agent the caller reaches where left out. */
+      /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent the caller reaches where left out. */
       agents?: string[] | undefined;
     } = {},
     options: CallOptions = {},
@@ -757,7 +882,7 @@ export class EventsOperations {
    */
   list(
     input: {
-      /** The agents to cover, by ID, as acme/triage or acme/@jon/triage, given once for each. Every agent the caller reaches where left out. */
+      /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent the caller reaches where left out. */
       agents?: string[] | undefined;
       /** The event types to read, as wardrik.run.completed, given once for each. Every type where left out. A wardrik.events.dropped comes whatever the types. */
       types?: string[] | undefined;
@@ -777,7 +902,7 @@ export class EventsOperations {
    */
   streamList(
     input: {
-      /** The agents to cover, by ID, as acme/triage or acme/@jon/triage, given once for each. Every agent the caller reaches where left out. */
+      /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent the caller reaches where left out. */
       agents?: string[] | undefined;
       /** The event types to read, as wardrik.run.completed, given once for each. Every type where left out. A wardrik.events.dropped comes whatever the types. */
       types?: string[] | undefined;
@@ -794,7 +919,7 @@ export class EventsOperations {
    */
   head(
     input: {
-      /** The agents to cover, by ID, as acme/triage or acme/@jon/triage, given once for each. Every agent the caller reaches where left out. */
+      /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent the caller reaches where left out. */
       agents?: string[] | undefined;
     } = {},
     options: CallOptions = {},
@@ -844,7 +969,7 @@ export class DeploymentOperations {
    */
   reload(
     input: {
-      /** The agents to cover, by ID, as acme/triage or acme/@jon/triage, given once for each. Every agent the caller reaches where left out. */
+      /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent the caller reaches where left out. */
       agents?: string[] | undefined;
     } = {},
     options: CallOptions = {},

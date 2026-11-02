@@ -15,6 +15,14 @@ export type Owner = string;
  */
 export type Source = "config" | "runtime";
 /**
+ * An agent's ID, as your app chose it. Wardrik never reads it.
+ */
+export type AgentId = string;
+/**
+ * A conversation's ID, as your app chose it. A conversation runs on its agent's definition, with a history of its own. Left out for the agent's own history.
+ */
+export type ConversationId = string;
+/**
  * What agent.ask takes: its text as content, or as text parts, under an id of the caller's, or one it's given. A message sent again under the same id is taken once.
  */
 export type Ask = Ask1 & Ask2;
@@ -107,7 +115,7 @@ export interface Cost {
  */
 export interface Principal {
   /**
-   * The name they are known by. One known as a resource is named as the resource is, with no wildcard: an org, acme; a user, acme/@jon; the deployment itself, deployment; an agent, acme/agent/triage, or one of its threads, acme/@jon/agent/triage/thread/1696.1234; a request to an agent's trigger, acme/agent/triage/trigger/hook. Anyone else is provider:subject, by where they reached Wardrik: a provider of lower-case letters, digits and -, then what it knows them as, with no whitespace, as slack:T0123/U024BE7LH for someone in the channel slack, by its workspace and their id there, shell:jon, ssh:jon, terminal:jon or oauth:github.
+   * Who they are, by the ID your app gave them, as user_42, or provider:subject for someone known by where they reached Wardrik, as slack:T0123/U024BE7LH.
    */
   id: string;
   /**
@@ -254,14 +262,11 @@ export interface Spent {
   usd: number;
 }
 /**
- * One agent of agents.list.
+ * One agent or conversation of agents.list.
  */
 export interface AgentSummary {
-  /**
-   * The agent's ID: org/name, or org/@user/name for one that works for a user.
-   */
-  id: string;
-  name: string;
+  id: AgentId;
+  conversation?: ConversationId;
   /**
    * Whether it waits for a message, answers one, waits on a person, or sleeps until something asks it.
    */
@@ -452,16 +457,13 @@ export interface AgentDefinition {
   channels?: string[];
 }
 /**
- * What agent.read answers: what the agent is doing now, and where its log stands. Read and follow the log after cursor.
+ * What agent.read answers: what the agent or conversation is doing now, and where its log stands. Read and follow the log after cursor.
  */
 export interface AgentSnapshot {
   agent: {
-    /**
-     * The agent's ID: org/name, or org/@user/name for one that works for a user.
-     */
-    id: string;
-    name: string;
+    id: AgentId;
   };
+  conversation?: ConversationId;
   /**
    * Whether it waits for a message, answers one, waits on a person, or sleeps until something asks it.
    */
@@ -532,7 +534,7 @@ export interface CloudEvent {
    */
   id: string;
   /**
-   * The agent, or audit for a change people made.
+   * The agent, by its URL-encoded ID, or audit for a change people made.
    */
   source: string;
   type: string;
@@ -544,6 +546,8 @@ export interface CloudEvent {
    * CloudEvents' sequence extension. Durable events only.
    */
   sequence?: string;
+  agent?: AgentId;
+  conversation?: ConversationId;
   traceparent: string;
   tracestate?: string;
   parentspanid?: string;
@@ -616,7 +620,7 @@ export interface ChannelResponse {
   body: string;
 }
 /**
- * What events.head answers: the cursor at the end of every log the patterns cover.
+ * What events.head answers: the cursor at the end of every log the agents cover.
  */
 export interface Cursor {
   cursor: string;
@@ -697,7 +701,7 @@ export interface ErrorBody {
  */
 export interface Events {
   /**
-   * Each event's source names its agent, and its sequence its place in that agent's log. Where a log was trimmed past the cursor, a wardrik.events.dropped says so.
+   * Each event's agent and conversation name its log, and its sequence its place in that log. Where a log was trimmed past the cursor, a wardrik.events.dropped says so.
    */
   events: CloudEvent[];
   /**
@@ -735,16 +739,14 @@ export interface HookRequest {
   };
 }
 /**
- * What interrupts.list answers: the calls agents wait on a person for, each with its agent.
+ * What interrupts.list answers: the calls agents wait on a person for, each with its agent and conversation.
  */
 export interface Interrupts {
   interrupts: {
     agent: {
-      /**
-       * The agent's ID: org/name, or org/@user/name for one that works for a user.
-       */
-      id: string;
+      id: AgentId;
     };
+    conversation?: ConversationId;
     interrupt: Interrupt;
   }[];
 }
@@ -939,6 +941,7 @@ export interface AgentCancelledData {
      */
     id: string;
   };
+  conversation?: ConversationId;
   /**
    * The pattern someone cancelled every agent it covers by at once, where it was one of them; every agent's entry from that one change shares its trace.
    */
@@ -956,6 +959,7 @@ export interface AgentClearedData {
      */
     id: string;
   };
+  conversation?: ConversationId;
   actor?: Principal;
   assumed_by?: AssumedBy;
 }
@@ -999,6 +1003,7 @@ export interface AgentMovedData {
      */
     id: string;
   };
+  conversation?: ConversationId;
   /**
    * The node it moved to, by its Erlang name.
    */
@@ -1028,10 +1033,12 @@ export interface AgentSpawnedData {
  */
 export interface AgentStartedData {
   agent: {
-    id?: string;
-    name?: string;
+    id: string;
   };
-  conversation: {
+  /**
+   * The conversation it holds; left out for the agent's own history.
+   */
+  conversation?: {
     id: string;
   };
   node: string;
@@ -1047,6 +1054,7 @@ export interface AgentStoppedData {
      */
     id: string;
   };
+  conversation?: ConversationId;
   /**
    * The node it stopped on, where it stopped itself.
    */
@@ -1081,6 +1089,7 @@ export interface CallKilledData {
      */
     id: string;
   };
+  conversation?: ConversationId;
   call: {
     /**
      * The tool call's id.

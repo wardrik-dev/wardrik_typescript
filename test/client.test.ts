@@ -6,9 +6,9 @@ import { error, event, fake, json, stream, type Fake } from "./server.ts";
 let server: Fake;
 let wardrik: Wardrik;
 
-const id = "acme/triage";
-const path = "/v1/agents/acme/triage";
-const snapshot = (cursor: string) => ({ agent: { id, name: "triage" }, status: "idle", pending: 0, activity: null, interrupts: [], cursor });
+const id = "agt_01JF8X5RQ2";
+const path = "/v1/agents/agt_01JF8X5RQ2";
+const snapshot = (cursor: string) => ({ agent: { id }, status: "idle", pending: 0, activity: null, interrupts: [], cursor });
 
 beforeEach(async () => {
   server = await fake();
@@ -29,39 +29,54 @@ const collect = async (events: AsyncIterable<WardrikEvent>, count = Infinity) =>
 const sent = () => server.received.map((request) => [request.method, request.path, request.body]);
 
 describe("requests", () => {
-  test("carry the token, and each segment of an ID encoded on its own", async () => {
-    server.on("GET", "/v1/agents/acme/tri%3Fage", (_request, response) => json(response, 200, snapshot("c3")));
+  test("carry the token, and send an agent's ID as one encoded segment", async () => {
+    server.on("GET", "/v1/agents/acme%2Ftri%3Fage", (_request, response) => json(response, 200, snapshot("c3")));
 
     assert.equal((await wardrik.agent("acme/tri?age").read()).cursor, "c3");
     assert.equal(server.received[0]!.headers.authorization, "Bearer wardrik_secret");
   });
 
-  test("reach a user's agent under @user, and a conversation under conversations/", async () => {
-    server.on("GET", "/v1/agents/acme/@j%20n/triage", (_request, response) => json(response, 200, snapshot("c4")));
-    server.on("GET", "/v1/agents/acme/@jon/triage/conversations/C1-1696.1234", (_request, response) =>
-      json(response, 200, snapshot("c5")),
-    );
+  test("send a conversation's operations to its routes, with both IDs encoded", async () => {
+    const conversation = "/v1/agents/a%2Fb/conversations/C1%2F1696%20.1234";
+    server.on("GET", conversation, (_request, response) => json(response, 200, snapshot("c4")));
+    server.on("POST", conversation + "/messages", (_request, response) => json(response, 202, { message: { id: "m1", cursor: "c5" } }));
+    server.on("POST", conversation + "/interrupts/call_1/approve", (_request, response) => json(response, 200, { decisions: [] }));
+    server.on("PUT", "/v1/agents/a%2Fb", (_request, response) => json(response, 200, snapshot("")));
 
-    assert.equal((await wardrik.agent("acme/@j n/triage").read()).cursor, "c4");
-    assert.equal((await wardrik.agent("acme/@jon/triage/C1-1696.1234").read()).cursor, "c5");
+    const thread = wardrik.agent("a/b", { conversation: "C1/1696 .1234" });
+    assert.equal(thread.conversation, "C1/1696 .1234");
+
+    assert.equal((await thread.read()).cursor, "c4");
+    await thread.ask({ id: "m1", content: "hi" });
+    await thread.approve("call_1");
+    await thread.define({});
+    await wardrik.run("agent.ask", { agent: "a/b", conversation: "C1/1696 .1234", content: "Hi" });
+
+    assert.deepEqual(sent(), [
+      ["GET", conversation, undefined],
+      ["POST", conversation + "/messages", { id: "m1", content: "hi" }],
+      ["POST", conversation + "/interrupts/call_1/approve", {}],
+      ["PUT", "/v1/agents/a%2Fb", {}],
+      ["POST", conversation + "/messages", { content: "Hi" }],
+    ]);
   });
 
-  test("refuse what is not an ID", async () => {
-    for (const bad of ["triage", "acme//triage", "acme/@/triage", "acme/@jon", "a/@b/c/d/e", "a/b/c/d"]) {
-      await assert.rejects(wardrik.agent(bad).read(), TypeError, bad);
-    }
+  test("refuse an empty ID, and a conversation for an operation that has none", async () => {
+    await assert.rejects(wardrik.agent("").read(), TypeError);
+    await assert.rejects(wardrik.agent(id, { conversation: "" }).read(), TypeError);
+    await assert.rejects(wardrik.run("agent.define", { agent: id, conversation: "C1" } as never), TypeError);
 
     assert.deepEqual(server.received, []);
   });
 
   test("throw what the server answers as an error", async () => {
-    server.on("GET", path, (_request, response) => json(response, 404, error("not_found", "No agent runs under acme/triage.")));
+    server.on("GET", path, (_request, response) => json(response, 404, error("not_found", "No agent runs under agt_01JF8X5RQ2.")));
 
     await assert.rejects(wardrik.agent(id).read(), (thrown: unknown) => {
       assert.ok(thrown instanceof WardrikError);
       assert.equal(thrown.status, 404);
       assert.equal(thrown.type, "not_found");
-      assert.equal(thrown.message, "No agent runs under acme/triage.");
+      assert.equal(thrown.message, "No agent runs under agt_01JF8X5RQ2.");
       assert.equal(thrown.requestId, "req_test");
       return true;
     });
@@ -130,7 +145,7 @@ describe("an agent", () => {
   });
 
   test("is spawned, stopped and moved as the API takes it", async () => {
-    const answer = { agent: { id, name: "triage" } };
+    const answer = { agent: { id, status: "idle", pending: 0 } };
     for (const verb of ["spawn", "stop", "move"]) server.on("POST", `${path}/${verb}`, (_request, response) => json(response, 200, answer));
 
     const agent = wardrik.agent(id);
@@ -149,17 +164,17 @@ describe("an agent", () => {
 describe("many agents", () => {
   test("are listed, cancelled, forgotten and their parked calls read", async () => {
     server.on("GET", "/v1/agents", (_request, response) => json(response, 200, { agents: [] }));
-    server.on("POST", "/v1/agents/cancel", (_request, response) => json(response, 202, { cancelled: ["acme/a"] }));
-    server.on("DELETE", "/v1/agents", (_request, response) => json(response, 200, { forgotten: ["acme/a"], kept: [], failed: [] }));
+    server.on("POST", "/v1/agents/cancel", (_request, response) => json(response, 202, { cancelled: ["agt_a"] }));
+    server.on("DELETE", "/v1/agents", (_request, response) => json(response, 200, { forgotten: ["agt_a"], kept: [], failed: [] }));
     server.on("GET", "/v1/interrupts", (_request, response) => json(response, 200, { interrupts: [] }));
 
-    const agents = ["acme/triage", "acme/@jon/notes"];
+    const agents = ["agt_01JF8X5RQ2", "acme/notes"];
     assert.deepEqual(await wardrik.agents.list({ agents }), []);
-    assert.deepEqual(await wardrik.agents.cancel({ agents }), ["acme/a"]);
-    assert.deepEqual((await wardrik.agents.forget({ agents })).forgotten, ["acme/a"]);
+    assert.deepEqual(await wardrik.agents.cancel({ agents }), ["agt_a"]);
+    assert.deepEqual((await wardrik.agents.forget({ agents })).forgotten, ["agt_a"]);
     assert.deepEqual(await wardrik.interrupts.list(), []);
 
-    const query = "agents=acme%2Ftriage&agents=acme%2F%40jon%2Fnotes";
+    const query = "agents=agt_01JF8X5RQ2&agents=acme%2Fnotes";
     assert.deepEqual(
       server.received.map((request) => [request.method, request.path]),
       [
@@ -218,7 +233,7 @@ describe("events", () => {
     server.on("GET", "/v1/events", stream([event("run.completed", {}, { sequence: 3 })]));
     server.on("GET", "/v1/events", stream([event("run.started", {}, { sequence: 4 })], { end: false }));
 
-    const events = wardrik.events.streamList({ agents: ["acme/triage"] });
+    const events = wardrik.events.streamList({ agents: [id] });
 
     assert.deepEqual(
       (await collect(events, 2)).map((event) => event.type),
@@ -228,9 +243,9 @@ describe("events", () => {
     assert.deepEqual(
       server.received.map((request) => [request.path, request.headers["last-event-id"]]),
       [
-        ["/v1/events/head?agents=acme%2Ftriage", undefined],
-        ["/v1/events?agents=acme%2Ftriage", "h0"],
-        ["/v1/events?agents=acme%2Ftriage", "000000000003"],
+        ["/v1/events/head?agents=agt_01JF8X5RQ2", undefined],
+        ["/v1/events?agents=agt_01JF8X5RQ2", "h0"],
+        ["/v1/events?agents=agt_01JF8X5RQ2", "000000000003"],
       ],
     );
 
@@ -273,7 +288,7 @@ describe("listen", () => {
           stop.abort();
         },
       },
-      { agents: ["acme/triage"], signal: stop.signal },
+      { agents: [id], signal: stop.signal },
     );
 
     assert.deepEqual(handled, ["r1 000000000003", "No. 000000000004"]);
@@ -281,8 +296,8 @@ describe("listen", () => {
     assert.deepEqual(
       server.received.map((request) => [request.path, request.headers["last-event-id"]]),
       [
-        ["/v1/events/head?agents=acme%2Ftriage", undefined],
-        ["/v1/events?agents=acme%2Ftriage&types=wardrik.run.completed&types=wardrik.run.failed", "h0"],
+        ["/v1/events/head?agents=agt_01JF8X5RQ2", undefined],
+        ["/v1/events?agents=agt_01JF8X5RQ2&types=wardrik.run.completed&types=wardrik.run.failed", "h0"],
       ],
     );
   });
@@ -364,6 +379,20 @@ describe("stream and reply", () => {
 
     assert.deepEqual(await agent.reply("hi", { id: "m1" }), { status: "completed", message: "m1", run: mine, text: "All quiet." });
     assert.deepEqual(await agent.reply("hi", { id: "m1" }), { status: "waiting", message: "m1", run: mine, interrupts: [{ id: "call_1" }] });
+  });
+
+  test("follow a conversation's own log", async () => {
+    const conversation = path + "/conversations/C1";
+    server.on("POST", conversation + "/messages", (_request, response) => json(response, 202, { message: { id: "m1", cursor: "c1" } }));
+    server.on("GET", conversation + "/events", stream(run, { end: false }));
+
+    const reply = await wardrik.agent(id, { conversation: "C1" }).reply("hi", { id: "m1" });
+
+    assert.equal(reply.status, "waiting");
+    assert.deepEqual(
+      server.received.map((request) => `${request.method} ${request.path}`),
+      [`POST ${conversation}/messages`, `GET ${conversation}/events`],
+    );
   });
 
   test("read nothing when the message is refused", async () => {

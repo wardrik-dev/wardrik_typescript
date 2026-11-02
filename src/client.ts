@@ -1,5 +1,5 @@
 import type { StandardSchemaWithJSON } from "@modelcontextprotocol/server";
-import { Agent } from "./agent.ts";
+import { Agent, type AgentOptions } from "./agent.ts";
 import type { Handlers, ListenOptions } from "./events.ts";
 import { Http } from "./http.ts";
 import { Operations, type Inputs, type OperationId, type Outputs } from "./operations.ts";
@@ -14,7 +14,7 @@ export const version = "0.1.0-rc.2";
 export interface WardrikOptions {
   /** The server's URL. `WARDRIK_URL` unless set, else the daemon's `http://127.0.0.1:4747`. */
   url?: string;
-  /** The bearer credential, whatever the host's authenticator takes. `WARDRIK_TOKEN` unless set. */
+  /** The bearer credential, whatever your app's authenticator takes. `WARDRIK_TOKEN` unless set. */
   token?: string;
   /** The `fetch` to make requests with. The global `fetch` unless set. */
   fetch?: typeof fetch;
@@ -33,7 +33,7 @@ const env = (name: string): string | undefined =>
  *
  * ```ts
  * const wardrik = new Wardrik();
- * const agent = wardrik.agent("acme/triage");
+ * const agent = wardrik.agent("agt_01JF8X5RQ2");
  * await agent.define({ model: "anthropic:claude-sonnet-4-5" });
  *
  * for await (const event of agent.stream("What's on fire?")) {
@@ -60,25 +60,30 @@ export class Wardrik extends Operations {
     this.#worker = new Worker(options.name ?? "wardrik-sdk", version);
   }
 
-  /** Returns the agent `id`: `org/name`, `org/@user/name`, or a conversation of either. */
-  agent(id: string): Agent {
-    return new Agent(this.#http, id);
+  /**
+   * Returns the agent `id`, as your app chose it, or one of its conversations.
+   *
+   *     const agent = wardrik.agent("agt_01JF8X5RQ2");
+   *     const thread = wardrik.agent("agt_01JF8X5RQ2", { conversation: "C1-1696.1234" });
+   */
+  agent(id: string, options: AgentOptions = {}): Agent {
+    return new Agent(this.#http, id, options);
   }
 
   /**
    * Runs operation `id`, as `openapi.json` names it. `input` holds its path parameters, query
    * parameters and body together.
    *
-   *     await wardrik.run("agent.ask", { agent: "acme/triage", content: "Hi" });
+   *     await wardrik.run("agent.ask", { agent: "agt_01JF8X5RQ2", content: "Hi" });
    */
   run<Id extends OperationId>(id: Id, input: Inputs[Id], options: CallOptions = {}): Promise<Outputs[Id]> {
     return this.#runner.call(id, input, options);
   }
 
   /**
-   * Follows the events of `agents`, every agent the caller reaches unless set, and passes each
-   * to the handler for its type with the cursor after it. Waits for each handler before the next
-   * event.
+   * Follows the events of `agents` and their conversations, every agent the caller reaches unless
+   * set. Passes each to the handler for its type with the cursor after it. Waits for each handler
+   * before the next event.
    *
    * Save the cursor with the handler's work, and pass it back as `after` to resume. Each event is
    * handled at least once, so drop repeats by `id`. Without `after`, it starts at the next event
@@ -93,7 +98,7 @@ export class Wardrik extends Operations {
    *           });
    *         },
    *       },
-   *       { agents: ["acme/triage"], after: await db.cursor("runs") },
+   *       { agents: ["agt_01JF8X5RQ2"], after: await db.cursor("runs") },
    *     );
    *
    * Resolves when `signal` aborts. Rejects with whatever a handler throws.

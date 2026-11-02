@@ -3,6 +3,11 @@
 ## 0.1.0-rc.2 (2026-10-31)
 
 - The events for adding and removing an OAuth app.
+- `wardrik.agent(id, { conversation })` addresses one of an agent's conversations. Its operations
+  use the conversation's routes, and `stream` and `reply` follow its events.
+- `wardrik.run` takes `conversation` for an operation that can act on one.
+- Events carry `agent` and `conversation`. `agents.list` and `interrupts.list` items carry
+  `conversation`.
 
 ### Breaking
 
@@ -17,6 +22,10 @@
 - A tool call's `agent` is `{ key }`, the agent's ID as your app named it. `org`, `user` and
   `name` are gone.
 - An agent definition's `workspace.shared` mounts other agents' workspaces, each by `agent` ID.
+- Agent IDs are whatever your app chose. The SDK sends one as a single URL-encoded path segment,
+  and no longer checks for `org/name` or `org/@user/name`.
+- A conversation is no longer an ID's last segment. Pass it as `conversation`.
+- `agents.list` items and `agent.read`'s `agent` drop `name`.
 
 ## 0.1.0-rc.1 (2026-10-30)
 
