@@ -172,24 +172,6 @@ describe("many agents", () => {
   });
 });
 
-describe("owners", () => {
-  test("connect accounts and add OAuth apps, for the owner named", async () => {
-    const link = { provider: "linear", connected: false, authorization: { url: "https://auth.example.com/a" } };
-    const google = { owner: "acme", name: "google", source: "runtime", issuer: "https://accounts.google.com" };
-    server.on("POST", "/v1/connections/linear", (_request, response) => json(response, 200, link));
-    server.on("POST", "/v1/providers", (_request, response) => json(response, 201, google));
-
-    const app = { name: "google", issuer: "https://accounts.google.com" };
-    assert.deepEqual(await wardrik.connections.connect("linear", { owner: "acme/@jon" }), link);
-    await wardrik.providers.add({ owner: "acme", ...app });
-
-    assert.deepEqual(sent(), [
-      ["POST", "/v1/connections/linear?owner=acme%2F%40jon", undefined],
-      ["POST", "/v1/providers?owner=acme", app],
-    ]);
-  });
-});
-
 describe("events", () => {
   test("follow the log from where it stood, and resume after the last event that moved the cursor", async () => {
     server.on("GET", path, (_request, response) => json(response, 200, snapshot("c7")));

@@ -37,7 +37,7 @@ what the server does.
 
 * An agent's operations are on `wardrik.agent(id)`.
 * The rest are on a namespace named for the operation's prefix: `wardrik.agents.list`,
-  `wardrik.providers.add`, `wardrik.connections.list`.
+  `wardrik.events.list`.
 * Path parameters come first, by position. The rest of the input is one object, with the
   protocol's field names.
 
@@ -54,7 +54,6 @@ await agent.triggerSet("sweep", { every: "*/30 * * * *", prompt: "Check the queu
 await agent.approve("call_1", { note: "Go ahead." });
 
 const agents = await wardrik.agents.list({ agents: ["acme/triage", "acme/@jon/notes"] });
-const linear = await wardrik.connections.connect("linear", { owner: "acme/@jon" });
 ```
 
 An output with one property resolves to that property: `agents.list` resolves to the list,

@@ -2,8 +2,7 @@
 
 ## 0.1.0-rc.2 (2026-10-31)
 
-- `providers.list`, `providers.add` and `providers.remove`: OAuth apps an org or person keeps for
-  their people, and the events for adding and removing one.
+- The events for adding and removing an OAuth app.
 
 ### Breaking
 
@@ -11,6 +10,8 @@
   own routes.
 - `mcpServers.*` and `notifyTargets.*` are gone, with the protocol's: `wardrik_daemon` serves them
   on its own routes. The events for adding and removing a notify target stay.
+- `providers.*` and `connections.*` are gone, with the protocol's: `wardrik_daemon` serves them on
+  its own routes.
 - `tokens.*` are gone, and the operations over many agents take `agents`, exact agent IDs, for
   `resources`.
 

@@ -15,9 +15,6 @@ import type {
   Authorization,
   Calls,
   Cancelled,
-  Connecting,
-  Connection,
-  Connections,
   Cursor,
   DecidedBody,
   Decisions,
@@ -28,9 +25,6 @@ import type {
   Interrupts,
   Node,
   Nodes,
-  Provider,
-  ProviderInput,
-  Providers,
   Reloaded,
   Runs,
   Timeline,
@@ -241,50 +235,6 @@ export const operations = {
     query: [],
     body: false,
   },
-  "connections.list": {
-    method: "GET",
-    path: "/v1/connections",
-    path_params: [],
-    query: ["owner"],
-    body: false,
-    unwrap: "connections",
-  },
-  "connections.connect": {
-    method: "POST",
-    path: "/v1/connections/{provider}",
-    path_params: ["provider"],
-    query: ["owner"],
-    body: false,
-  },
-  "connections.disconnect": {
-    method: "DELETE",
-    path: "/v1/connections/{provider}",
-    path_params: ["provider"],
-    query: ["owner"],
-    body: false,
-  },
-  "providers.list": {
-    method: "GET",
-    path: "/v1/providers",
-    path_params: [],
-    query: ["owner"],
-    body: false,
-    unwrap: "providers",
-  },
-  "providers.add": {
-    method: "POST",
-    path: "/v1/providers",
-    path_params: [],
-    query: ["owner"],
-    body: true,
-  },
-  "providers.remove": {
-    method: "DELETE",
-    path: "/v1/providers/{provider}",
-    path_params: ["provider"],
-    query: ["owner"],
-    body: false,
-  },
   "deployment.reload": {
     method: "POST",
     path: "/v1/deployment/reload",
@@ -448,36 +398,6 @@ export interface Inputs {
     /** The trigger's name. */
     trigger: string;
   };
-  "connections.list": {
-    /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
-    owner: string;
-  };
-  "connections.connect": {
-    /** The account's provider, by name. */
-    provider: string;
-    /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
-    owner: string;
-  };
-  "connections.disconnect": {
-    /** The account's provider, by name. */
-    provider: string;
-    /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
-    owner: string;
-  };
-  "providers.list": {
-    /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
-    owner: string;
-  };
-  "providers.add": {
-    /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
-    owner: string;
-  } & ProviderInput;
-  "providers.remove": {
-    /** The account's provider, by name. */
-    provider: string;
-    /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
-    owner: string;
-  };
   "deployment.reload": {
     /** The agents to cover, by ID, as acme/triage or acme/@jon/triage, given once for each. Every agent the caller reaches where left out. */
     agents?: string[] | undefined;
@@ -518,12 +438,6 @@ export interface Outputs {
   "agent.kill": void;
   "agent.trigger_set": TriggerDefinition;
   "agent.trigger_remove": TriggerDefinition;
-  "connections.list": Connections["connections"];
-  "connections.connect": Connecting;
-  "connections.disconnect": Connection;
-  "providers.list": Providers["providers"];
-  "providers.add": Provider;
-  "providers.remove": Provider;
   "deployment.reload": Reloaded;
   "deployment.nodes": Nodes;
   "agent.move": AgentAnswer["agent"];
@@ -914,117 +828,6 @@ export class AuditOperations {
   }
 }
 
-/** The `connections.*` operations. */
-export class ConnectionsOperations {
-  readonly #runner: Runner;
-
-  /** @internal */
-  constructor(runner: Runner) {
-    this.#runner = runner;
-  }
-
-  /**
-   * List the accounts an owner is offered.
-   */
-  list(
-    input: {
-      /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
-      owner: string;
-    },
-    options: CallOptions = {},
-  ): Promise<Outputs["connections.list"]> {
-    return this.#runner.call("connections.list", { ...input }, options);
-  }
-
-  /**
-   * Connect an account.
-   *
-   * Connecting asks nobody to approve; the account is held once the person has authorized.
-   */
-  connect(
-    provider: string,
-    input: {
-      /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
-      owner: string;
-    },
-    options: CallOptions = {},
-  ): Promise<Outputs["connections.connect"]> {
-    return this.#runner.call("connections.connect", { ...input, provider }, options);
-  }
-
-  /**
-   * Forget an account.
-   *
-   * The next call that needs it asks again.
-   */
-  disconnect(
-    provider: string,
-    input: {
-      /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
-      owner: string;
-    },
-    options: CallOptions = {},
-  ): Promise<Outputs["connections.disconnect"]> {
-    return this.#runner.call("connections.disconnect", { ...input, provider }, options);
-  }
-}
-
-/** The `providers.*` operations. */
-export class ProvidersOperations {
-  readonly #runner: Runner;
-
-  /** @internal */
-  constructor(runner: Runner) {
-    this.#runner = runner;
-  }
-
-  /**
-   * List the OAuth apps an owner's people sign in with.
-   *
-   * The owner's own, then those it gets from further out: a person's org's, then the deployment's. Each says which owner holds it.
-   */
-  list(
-    input: {
-      /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
-      owner: string;
-    },
-    options: CallOptions = {},
-  ): Promise<Outputs["providers.list"]> {
-    return this.#runner.call("providers.list", { ...input }, options);
-  }
-
-  /**
-   * Add an OAuth app for an owner's people.
-   *
-   * An org's app serves its own agents and every agent of its people; a person's serves their agents alone. One of the owner's own by the same name is a conflict; one held further out is overridden.
-   */
-  add(
-    input: {
-      /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
-      owner: string;
-    } & ProviderInput,
-    options: CallOptions = {},
-  ): Promise<Outputs["providers.add"]> {
-    return this.#runner.call("providers.add", { ...input }, options);
-  }
-
-  /**
-   * Remove an OAuth app.
-   *
-   * Only the owner's own. Sign-ins through it find the next one out by the same name, if there's one.
-   */
-  remove(
-    provider: string,
-    input: {
-      /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
-      owner: string;
-    },
-    options: CallOptions = {},
-  ): Promise<Outputs["providers.remove"]> {
-    return this.#runner.call("providers.remove", { ...input, provider }, options);
-  }
-}
-
 /** The `deployment.*` operations. */
 export class DeploymentOperations {
   readonly #runner: Runner;
@@ -1067,10 +870,6 @@ export class Operations {
   readonly events: EventsOperations;
   /** The `audit.*` operations. */
   readonly audit: AuditOperations;
-  /** The `connections.*` operations. */
-  readonly connections: ConnectionsOperations;
-  /** The `providers.*` operations. */
-  readonly providers: ProvidersOperations;
   /** The `deployment.*` operations. */
   readonly deployment: DeploymentOperations;
 
@@ -1080,8 +879,6 @@ export class Operations {
     this.interrupts = new InterruptsOperations(runner);
     this.events = new EventsOperations(runner);
     this.audit = new AuditOperations(runner);
-    this.connections = new ConnectionsOperations(runner);
-    this.providers = new ProvidersOperations(runner);
     this.deployment = new DeploymentOperations(runner);
   }
 }
