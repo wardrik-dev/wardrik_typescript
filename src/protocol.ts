@@ -7,7 +7,7 @@
 export type AssumedBy = Principal[];
 export type DurationMs = number;
 /**
- * Who holds it: deployment, an org as acme, or a person as acme/@jon.
+ * Who holds it, as your app names them, or deployment.
  */
 export type Owner = string;
 /**
@@ -1228,7 +1228,7 @@ export interface NotifyTargetAddedData {
     url: string;
   };
   /**
-   * The org, as acme, or the user, as acme/@jon, whose agents' notices it takes.
+   * Whose agents' notices it takes, as your app names them.
    */
   owner: string;
   actor?: Principal;
@@ -1242,7 +1242,7 @@ export interface NotifyTargetRemovedData {
     name: string;
   };
   /**
-   * The org, as acme, or the user, as acme/@jon, whose agents' notices it takes.
+   * Whose agents' notices it takes, as your app names them.
    */
   owner: string;
   actor?: Principal;
@@ -1256,7 +1256,7 @@ export interface ProviderAddedData {
     name: string;
   };
   /**
-   * The org, as acme, or the user, as acme/@jon, whose people sign in with it.
+   * Whose people sign in with it, as your app names them.
    */
   owner: string;
   actor?: Principal;
@@ -1270,7 +1270,7 @@ export interface ProviderRemovedData {
     name: string;
   };
   /**
-   * The org, as acme, or the user, as acme/@jon, whose people sign in with it.
+   * Whose people sign in with it, as your app names them.
    */
   owner: string;
   actor?: Principal;
@@ -1381,7 +1381,7 @@ export interface SecretRemovedData {
     name: string;
   };
   /**
-   * The org, as acme, or the user, as acme/@jon, it is kept for; none where it is the deployment's.
+   * Who it is kept for, as your app names them; none where it is the deployment's.
    */
   owner?: string;
   actor?: Principal;
@@ -1395,7 +1395,7 @@ export interface SecretStoredData {
     name: string;
   };
   /**
-   * The org, as acme, or the user, as acme/@jon, it is kept for; none where it is the deployment's.
+   * Who it is kept for, as your app names them; none where it is the deployment's.
    */
   owner?: string;
   actor?: Principal;
@@ -1410,7 +1410,7 @@ export interface ServerAddedData {
     url: string;
   };
   /**
-   * The org, as acme, or the user, as acme/@jon, whose agents it serves.
+   * Whose agents it serves, as your app names them.
    */
   owner: string;
   actor?: Principal;
@@ -1424,7 +1424,7 @@ export interface ServerRemovedData {
     name: string;
   };
   /**
-   * The org, as acme, or the user, as acme/@jon, whose agents it serves.
+   * Whose agents it serves, as your app names them.
    */
   owner: string;
   actor?: Principal;

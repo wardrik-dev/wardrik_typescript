@@ -310,7 +310,7 @@ const signature = (operation: Operation, bound: string[], query: Param[]) => {
 
 // What an agent's operation that can't act on a conversation says it does on one.
 const agentOnly = (operation: Operation, bound: string[]): string | undefined =>
-  bound.includes("agent") && !operation.conversation ? "Acts on the agent, whatever `conversation` is." : undefined;
+  bound.includes("agent") && !operation.conversation ? "Acts on the agent, never a conversation." : undefined;
 
 const call = (operation: Operation, name: string, bound: string[]): string => {
   const { args, value } = signature(operation, bound, queryParams(operation));
@@ -324,13 +324,13 @@ const call = (operation: Operation, name: string, bound: string[]): string => {
 };
 
 // A streamed operation's events as an EventStream, which follows the log and reconnects.
-const stream = (operation: Operation, name: string, bound: string[]): string => {
+const stream = (operation: Operation, name: string, bound: string[], called: string): string => {
   const query = queryParams(operation).filter((param) => param.name !== "limit");
   const { args, value } = signature(operation, bound, query);
 
   return (
-    `  /**\n   * Streams what \`${operation.id}\` reads, then each new event as it's written. Starts after\n` +
-    `   * \`after\`, or at the end of the log. See \`EventStream\`.\n   */\n` +
+    `  /**\n   * Like \`${called}\`, then follows each new event as it's written. Starts after \`after\`, or at\n` +
+    `   * the end of the log. See \`EventStream\`.\n   */\n` +
     `  ${name}(${[...args, "options: StreamOptions = {}"].join(", ")}): EventStream {\n` +
     `    return this.#runner.stream(${JSON.stringify(operation.id)}, ${value}, options);\n  }\n`
   );
@@ -339,7 +339,7 @@ const stream = (operation: Operation, name: string, bound: string[]): string => 
 const method = (operation: Operation, prefix: string, bound: string[]): string => {
   const verb = operation.id.slice(prefix.length + 1);
   const called = call(operation, camel(verb), bound);
-  return operation.stream ? called + "\n" + stream(operation, "stream" + pascal(verb), bound) : called;
+  return operation.stream ? called + "\n" + stream(operation, "stream" + pascal(verb), bound, camel(verb)) : called;
 };
 
 const prefixes = [...new Set(operations.map((operation) => operation.id.split(".")[0]!))];
@@ -353,8 +353,8 @@ const namespace = (prefix: string): string => {
 
   const field =
     prefix === "agent"
-      ? "  /** The agent's ID, as your app chose it. */\n  readonly agent: string;\n" +
-        "  /** The conversation its operations act on. The agent's own history where undefined. */\n" +
+      ? "  /** The agent's ID. */\n  readonly agent: string;\n" +
+        "  /** The conversation the methods act on. `undefined` for the agent's own history. */\n" +
         "  readonly conversation: string | undefined;\n"
       : "";
   const init = prefix === "agent" ? "    this.agent = agent;\n    this.conversation = conversation;\n" : "";

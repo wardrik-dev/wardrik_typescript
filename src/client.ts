@@ -10,15 +10,15 @@ import { Worker, type ToolDefinition, type WorkOptions } from "./worker.ts";
 /** This SDK's version. */
 export const version = "0.1.0-rc.2";
 
-/** Options for `new Wardrik()`. Each is optional. */
+/** Options for `new Wardrik()`. */
 export interface WardrikOptions {
-  /** The server's URL. `WARDRIK_URL` unless set, else the daemon's `http://127.0.0.1:4747`. */
+  /** The server's URL. Defaults to `WARDRIK_URL`, then `http://127.0.0.1:4747`. */
   url?: string;
-  /** The bearer credential, whatever your app's authenticator takes. `WARDRIK_TOKEN` unless set. */
+  /** Sent as `Authorization: Bearer`. Defaults to `WARDRIK_TOKEN`. */
   token?: string;
-  /** The `fetch` to make requests with. The global `fetch` unless set. */
+  /** The `fetch` to use. Defaults to the global one. */
   fetch?: typeof fetch;
-  /** This process's name as a tool worker. `"wardrik-sdk"` unless set. */
+  /** This process's name as a tool worker. Defaults to `"wardrik-sdk"`. */
   name?: string;
 }
 
@@ -26,20 +26,19 @@ const env = (name: string): string | undefined =>
   (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env[name];
 
 /**
- * A client for one Wardrik server, using one credential.
- *
- * Its namespaces, like `agents` and `events`, hold the protocol's operations. `agent(id)` holds
- * an agent's. Throws a `TypeError` if there's no token.
+ * A client for one Wardrik server.
  *
  * ```ts
  * const wardrik = new Wardrik();
- * const agent = wardrik.agent("agt_01JF8X5RQ2");
+ * const agent = wardrik.agent("support-bot");
  * await agent.define({ model: "anthropic:claude-sonnet-4-5" });
  *
  * for await (const event of agent.stream("What's on fire?")) {
  *   if (event.type === "wardrik.message.delta") process.stdout.write(event.data.delta);
  * }
  * ```
+ *
+ * Throws a `TypeError` without a token.
  */
 export class Wardrik extends Operations {
   readonly #http: Http;
@@ -61,47 +60,41 @@ export class Wardrik extends Operations {
   }
 
   /**
-   * Returns the agent `id`, as your app chose it, or one of its conversations.
+   * Returns an agent, or one of its conversations. Makes no request.
    *
-   *     const agent = wardrik.agent("agt_01JF8X5RQ2");
-   *     const thread = wardrik.agent("agt_01JF8X5RQ2", { conversation: "C1-1696.1234" });
+   * ```ts
+   * const agent = wardrik.agent("support-bot");
+   * const thread = wardrik.agent("support-bot", { conversation: "C1-1696.1234" });
+   * ```
    */
   agent(id: string, options: AgentOptions = {}): Agent {
     return new Agent(this.#http, id, options);
   }
 
   /**
-   * Runs operation `id`, as `openapi.json` names it. `input` holds its path parameters, query
-   * parameters and body together.
+   * Runs an operation by its ID, with all its parameters in `input`.
    *
-   *     await wardrik.run("agent.ask", { agent: "agt_01JF8X5RQ2", content: "Hi" });
+   * ```ts
+   * await wardrik.run("agent.ask", { agent: "support-bot", content: "Hi" });
+   * ```
    */
   run<Id extends OperationId>(id: Id, input: Inputs[Id], options: CallOptions = {}): Promise<Outputs[Id]> {
     return this.#runner.call(id, input, options);
   }
 
   /**
-   * Follows the events of `agents` and their conversations, every agent the caller reaches unless
-   * set. Passes each to the handler for its type with the cursor after it. Waits for each handler
-   * before the next event.
+   * Passes each event to the handler for its type, with the cursor after it.
    *
-   * Save the cursor with the handler's work, and pass it back as `after` to resume. Each event is
-   * handled at least once, so drop repeats by `id`. Without `after`, it starts at the next event
-   * written. A `wardrik.events.dropped` handler hears when the log was trimmed past the cursor.
+   * ```ts
+   * await wardrik.listen(
+   *   { "wardrik.run.completed": (event, cursor) => saveRun(event, cursor) },
+   *   { agents: ["support-bot"], after: savedCursor },
+   * );
+   * ```
    *
-   *     await wardrik.listen(
-   *       {
-   *         "wardrik.run.completed": async (event, cursor) => {
-   *           await db.transaction(async (tx) => {
-   *             await tx.insertRun(event.id, event.data);
-   *             await tx.saveCursor("runs", cursor);
-   *           });
-   *         },
-   *       },
-   *       { agents: ["agt_01JF8X5RQ2"], after: await db.cursor("runs") },
-   *     );
-   *
-   * Resolves when `signal` aborts. Rejects with whatever a handler throws.
+   * - Waits for each handler before the next event.
+   * - Each event arrives at least once. Drop repeats by `event.id`.
+   * - Resolves when `signal` aborts. Rejects with what a handler throws.
    */
   async listen(handlers: Handlers, options: ListenOptions = {}): Promise<void> {
     const input = { agents: options.agents, types: Object.keys(handlers), after: options.after };
@@ -114,27 +107,31 @@ export class Wardrik extends Operations {
   }
 
   /**
-   * Adds a tool that runs in this process. `work` offers it to the agents the credential reaches.
+   * Adds a tool that runs in this process. Agents whose tools include `workers/*` call it as
+   * `workers__<name>`.
    *
-   * Agents whose tools include `workers/*` call it as `workers__<name>`.
+   * ```ts
+   * wardrik.tool({
+   *   name: "refund_order",
+   *   description: "Refund an order in full.",
+   *   input: z.object({ orderId: z.string() }),
+   *   idempotent: true,
+   *   run: ({ orderId }, { idempotencyKey }) =>
+   *     stripe.refunds.create({ payment_intent: orderId }, { idempotencyKey }),
+   * });
    *
-   *     wardrik.tool({
-   *       name: "refund_order",
-   *       description: "Refund an order in full.",
-   *       input: z.object({ orderId: z.string() }),
-   *       idempotent: true,
-   *       run: ({ orderId }, { idempotencyKey }) =>
-   *         stripe.refunds.create({ payment_intent: orderId }, { idempotencyKey }),
-   *     });
-   *
-   *     await wardrik.work();
+   * await wardrik.work();
+   * ```
    */
   tool<Input extends StandardSchemaWithJSON>(definition: ToolDefinition<Input>): this {
     this.#worker.add(definition);
     return this;
   }
 
-  /** Answers calls to the tools added with `tool`, until `signal` aborts. */
+  /**
+   * Answers calls to the tools added with `tool` until `signal` aborts. Reconnects on its own.
+   * Throws a `WardrikError` if the token is refused.
+   */
   work(options: WorkOptions = {}): Promise<void> {
     return this.#worker.work(this.#http, options);
   }

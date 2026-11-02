@@ -12,32 +12,23 @@ import type { Http } from "./http.ts";
 
 /** The agent a call is made for. */
 export interface CallingAgent {
-  /** Its ID, exactly as your app named it. Wardrik reads nothing out of it. */
+  /** The agent's ID, as your app named it. */
   key: string;
 }
 
 /** The second argument to a tool's `run`. */
 export interface ToolContext {
-  /**
-   * The agent the call is for. Wardrik sets it, never from what the model
-   * sent. A tool serving many agents can answer each with only their data.
-   */
+  /** The calling agent. Set by Wardrik, never by the model. */
   agent: CallingAgent | undefined;
-  /** The run the call is part of: the ID its events carry. */
+  /** The run the call is part of. */
   run: string | undefined;
-  /**
-   * The call's idempotency key. It's the same each time Wardrik runs this
-   * call. Pass it to whatever the tool changes, such as a payment API, so a
-   * call run again after a crash has no second effect.
-   */
+  /** The same each time Wardrik runs this call. Pass it to whatever the tool changes. */
   idempotencyKey: string | undefined;
-  /** Aborts when Wardrik stops waiting for the call, or stops it. */
+  /** Aborts when Wardrik stops waiting for the call. */
   signal: AbortSignal;
   /**
-   * Reports what the call cost in US dollars, such as a paid API's price.
-   * The call's `tool_call.completed` event carries it, and budgets count it.
-   * Calls add up. A call that throws after reporting a cost fails with that
-   * cost. Throws a `RangeError` for a negative or non-finite amount.
+   * Reports what the call cost, in US dollars. Each report adds to the total. Budgets count it.
+   * Throws a `RangeError` for a negative or non-finite amount.
    */
   cost(usd: number): void;
 }
@@ -49,28 +40,17 @@ export interface ToolDefinition<Input extends StandardSchemaWithJSON = StandardS
   title?: string;
   /** What it does, for the model. */
   description?: string;
-  /** The schema of its arguments, such as `z.object({ … })`. */
+  /** Its arguments' schema, such as `z.object({ … })`. */
   input: Input;
   /**
-   * `true` if running it again with the same idempotency key has no second
-   * effect.
-   *
-   * A call may have run without Wardrik knowing: its agent or worker was lost
-   * mid-call, or it answered late. Such a call runs again if every worker
-   * offering the tool marks it `idempotent`. Otherwise it waits on a person.
+   * `true` if running it again with the same idempotency key has no second effect.
+   * A call cut off mid-run runs again if every worker offering the tool says so.
+   * Otherwise it waits on a person.
    */
   idempotent?: boolean;
-  /**
-   * `true` if it changes nothing, which also makes it safe to run again.
-   *
-   * A tool that isn't read-only is gated: a call waits on a person unless
-   * the agent's policy allows it by name.
-   */
+  /** `true` if it changes nothing. Other tools wait on a person unless the agent's policy allows them. */
   readOnly?: boolean;
-  /**
-   * Runs the tool. Return an object for the call's result, or a string for
-   * text. A thrown error fails the call, and the model is told.
-   */
+  /** Runs the tool. Return an object or a string. Throw to fail the call. */
   run(args: StandardSchemaWithJSON.InferOutput<Input>, context: ToolContext): unknown;
 }
 
@@ -78,12 +58,7 @@ export interface ToolDefinition<Input extends StandardSchemaWithJSON = StandardS
 export interface WorkOptions {
   /** Stops the work and closes the socket. */
   signal?: AbortSignal | undefined;
-  /**
-   * Milliseconds between pings to Wardrik. `15_000` unless set.
-   *
-   * A ping unanswered for as long again drops the socket and reconnects, so a server that went
-   * away without closing it isn't waited on.
-   */
+  /** Milliseconds between pings. An unanswered ping reconnects. Defaults to `15_000`. */
   keepalive?: number | undefined;
 }
 
@@ -137,11 +112,7 @@ export class Worker {
     if (this.#server && !replaced) this.#register(this.#server, tool);
   }
 
-  /**
-   * Holds a socket open to the server and answers calls over it, until
-   * `signal` aborts. Reopens a dropped socket, backing off up to 30 seconds.
-   * Throws a `WardrikError` if the credential is refused.
-   */
+  /** Answers calls over a socket until `signal` aborts. Throws a `WardrikError` if the token is refused. */
   async work(http: Http, options: WorkOptions = {}): Promise<void> {
     const { signal } = options;
     const every = options.keepalive ?? keepalive;

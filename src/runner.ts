@@ -2,12 +2,12 @@ import { EventStream } from "./events.ts";
 import type { Http } from "./http.ts";
 import { operations, type Inputs, type OperationId, type Outputs } from "./operations.ts";
 
-/** Options for a call, besides its input. */
+/** Options for any operation method. */
 export interface CallOptions {
   signal?: AbortSignal | undefined;
 }
 
-/** Options for a stream, besides its input. */
+/** Options for a `stream*` method. */
 export interface StreamOptions {
   /** Ends the stream. */
   signal?: AbortSignal | undefined;
@@ -16,7 +16,7 @@ export interface StreamOptions {
 type Entry = (typeof operations)[OperationId];
 type Fields = Record<string, unknown>;
 
-/** Runs operations by ID over HTTP, at the routes the protocol's document gives. */
+/** Runs operations by ID over HTTP. */
 export class Runner {
   readonly http: Http;
 

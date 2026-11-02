@@ -8,27 +8,21 @@ import { messages } from "./sse.ts";
 export interface StreamFrom {
   /** The query each request carries, besides the cursor. */
   query?: Record<string, unknown>;
-  /**
-   * The cursor to read after: an event's, a page's `next`, a message's or a snapshot's. Without
-   * it, the stream starts at the next event written.
-   */
+  /** The cursor to read after. Defaults to the next event written. */
   after?: string | undefined;
   signal?: AbortSignal | undefined;
 }
 
-/**
- * Handlers for `wardrik.listen`, by event type. Each gets the event and the cursor after it, to
- * save with its work.
- */
+/** Handlers for `wardrik.listen`, by event type. Each gets the event and the cursor after it. */
 export type Handlers = {
   [T in EventType]?: (event: EventOf<T>, cursor: string) => unknown;
 };
 
 /** Options for `wardrik.listen`. */
 export interface ListenOptions {
-  /** The agents to follow, by ID, each with its conversations. Every agent the caller reaches unless set. */
+  /** Agent IDs to follow, with their conversations. Defaults to every agent the token can read. */
   agents?: string[] | undefined;
-  /** The cursor to resume after. The next event written unless set. */
+  /** The cursor to resume after. Defaults to the next event written. */
   after?: string | undefined;
   signal?: AbortSignal | undefined;
 }
@@ -37,22 +31,21 @@ const firstDelay = 250;
 const lastDelay = 10_000;
 
 /**
- * Agents' events after a cursor, as an async iterable.
+ * Events after a cursor, as an async iterable. Returned by the `stream*` methods.
  *
- * It reconnects after any drop, including a `kill -9` of the node, and resumes after the last
- * event it yielded that moved its cursor. It throws on a `WardrikError` below 500.
+ * ```ts
+ * const events = agent.streamEvents({ after: saved });
+ * for await (const event of events) await save(event, events.cursor);
+ * ```
  *
- * Live events (streamed text and reasoning, and tool progress) don't move the cursor. A reconnect
- * doesn't resend the ones it missed. The `wardrik.message.completed` that follows has the whole
- * text.
- *
- * If the log was trimmed past the cursor, a `wardrik.events.dropped` event says so, and reading
- * resumes from the oldest event the log holds.
- *
- * It ends only when its signal aborts.
+ * - Reconnects after any drop and resumes after `cursor`.
+ * - Throws a `WardrikError` for a status below 500.
+ * - Deltas and tool progress don't move the cursor, and aren't resent after a reconnect.
+ * - `wardrik.events.dropped` says the log was trimmed past the cursor.
+ * - Never ends by itself. Stop it with `signal`.
  */
 export class EventStream implements AsyncIterable<WardrikEvent> {
-  /** Resolves when the stream first opens. Rejects if it fails to open. */
+  /** Resolves when the stream first opens. Rejects if it can't open. */
   readonly opened: Promise<void>;
 
   readonly #http: Http;
@@ -80,7 +73,7 @@ export class EventStream implements AsyncIterable<WardrikEvent> {
     this.opened.catch(() => {});
   }
 
-  /** The cursor after the last event this stream yielded that moved it. */
+  /** The cursor to resume after. Save it and pass it back as `after`. */
   get cursor(): string | undefined {
     return this.#after;
   }

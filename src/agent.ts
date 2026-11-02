@@ -5,15 +5,12 @@ import { Runner } from "./runner.ts";
 
 /** Options for `stream` and `reply`. */
 export interface StreamAskOptions {
-  /**
-   * The message's ID. A message sent twice with the same ID is queued once, so retrying after a
-   * lost response is safe. A random UUID unless set.
-   */
+  /** The message's ID. A retry with the same ID is queued once. Defaults to a random UUID. */
   id?: string | undefined;
   signal?: AbortSignal | undefined;
 }
 
-/** What `reply` resolves to: the run's text, the calls it waits on a person for, or how it ended. */
+/** What `reply` resolves to: the run's text, the interrupts it waits on, or how it ended. */
 export type Reply =
   | { status: "completed"; message: string; run: string; text: string }
   | { status: "waiting"; message: string; run: string; interrupts: Interrupt[] }
@@ -28,19 +25,16 @@ const asked = (input: string | Ask, id: string): Ask => (typeof input === "strin
 
 /** Options for `wardrik.agent`. */
 export interface AgentOptions {
-  /**
-   * A conversation of the agent, by your app's ID for it. It runs on the agent's definition, with a
-   * history of its own. The agent's own history unless set.
-   */
+  /** A conversation's ID. It has its own history. Defaults to the agent's own history. */
   conversation?: string | undefined;
 }
 
 /**
- * One agent, by your app's ID for it, or one of its conversations.
+ * An agent, or one of its conversations. Returned by `wardrik.agent`.
  *
- * Its methods are the protocol's `agent.*` operations, one request each. Nothing is fetched until
- * one is called. Those that can act on a conversation act on `conversation`. `stream` and `reply`
- * also follow the run that answers a message.
+ * - Most methods make one request, to the `agent.*` operation of the same name.
+ * - `stream` and `reply` also follow the run that answers a message.
+ * - Methods that can act on a conversation act on `conversation`.
  */
 export class Agent extends AgentOperations {
   readonly #runner: Runner;
@@ -53,21 +47,18 @@ export class Agent extends AgentOperations {
   }
 
   /**
-   * Sends a message and yields the events of the run that answers it, until the run completes,
-   * fails or is cancelled.
+   * Sends a message and yields the events of the run that answers it, until the run ends.
    *
-   * An interrupted run waits on a person. It carries on once each interrupt is decided with
-   * `approve` or `deny`, and its events keep coming.
+   * ```ts
+   * for await (const event of agent.stream("What's on fire?")) {
+   *   if (event.type === "wardrik.message.delta") process.stdout.write(event.data.delta);
+   *   if (event.type === "wardrik.run.interrupted") {
+   *     for (const interrupt of event.data.interrupts) await agent.approve(interrupt.id);
+   *   }
+   * }
+   * ```
    *
-   *     for await (const event of agent.stream("What's on fire?")) {
-   *       if (event.type === "wardrik.message.delta") process.stdout.write(event.data.delta);
-   *       if (event.type === "wardrik.run.interrupted") {
-   *         for (const interrupt of event.data.interrupts) await agent.approve(interrupt.id);
-   *       }
-   *     }
-   *
-   * Leaves out other runs' events. Leaves out `wardrik.agent.started` too, unless the agent moves
-   * to another node during this run.
+   * An interrupted run carries on, on the same stream, once each interrupt is approved or denied.
    */
   async *stream(input: string | Ask, options: StreamAskOptions = {}): AsyncGenerator<WardrikEvent> {
     const id = options.id ?? (typeof input === "string" ? undefined : input.id) ?? crypto.randomUUID();
@@ -92,8 +83,10 @@ export class Agent extends AgentOperations {
   /**
    * Sends a message and resolves when the run that answers it ends or waits on a person.
    *
-   *     const reply = await agent.reply("What's on fire?");
-   *     if (reply.status === "completed") console.log(reply.text);
+   * ```ts
+   * const reply = await agent.reply("What's on fire?");
+   * if (reply.status === "completed") console.log(reply.text);
+   * ```
    */
   async reply(input: string | Ask, options: StreamAskOptions = {}): Promise<Reply> {
     const id = options.id ?? (typeof input === "string" ? undefined : input.id) ?? crypto.randomUUID();

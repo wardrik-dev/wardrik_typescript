@@ -1,48 +1,29 @@
 # Wardrik SDK for TypeScript
 
-Drives Wardrik agents over the HTTP API, and offers them tools that run in your own process.
+Drive Wardrik agents over HTTP, and give them tools that run in your own process.
 
 ```sh
 npm install @wardrik/sdk@0.1.0-rc.2 zod
 ```
 
-Runs on Node 22.18 or later, Bun or Deno. `zod` 4 is a peer dependency, used for tool inputs.
+Runs on Node 22.18+, Bun or Deno. `zod` 4 is a peer dependency, for tool inputs.
 
-## Connecting
+## Connect
 
 ```ts
 import { Wardrik } from "@wardrik/sdk";
 
-const wardrik = new Wardrik();
+const wardrik = new Wardrik({ url: "http://127.0.0.1:4747", token: process.env.WARDRIK_TOKEN });
 ```
 
-Options, each optional:
+* `url` defaults to `WARDRIK_URL`, then `http://127.0.0.1:4747`.
+* `token` defaults to `WARDRIK_TOKEN`. It is sent as `Authorization: Bearer`.
+* Without a token, `new Wardrik()` throws a `TypeError`.
 
-* `url` - the server. `WARDRIK_URL` unless set, else `http://127.0.0.1:4747`.
-* `token` - the bearer credential, whatever your app's authenticator takes. `WARDRIK_TOKEN` unless
-  set. Throws a `TypeError` if neither is given.
-* `fetch` - the `fetch` to use. The global one unless set.
-* `name` - this process's name as a tool worker. `"wardrik-sdk"` unless set.
-
-The SDK sends `token` as `Authorization: Bearer`. Your app's authenticator decides who it is, and
-its authorizer what they may do.
-
-* A credential the authenticator refuses throws a `WardrikError` of type `unauthorized`.
-* An action the caller may not take throws one of type `forbidden`.
-
-## Operations
-
-Every operation in the protocol's `openapi.json` is a generated method, so the SDK offers exactly
-what the server does.
-
-* An agent's operations are on `wardrik.agent(id)`.
-* The rest are on a namespace named for the operation's prefix: `wardrik.agents.list`,
-  `wardrik.events.list`.
-* Path parameters come first, by position. The rest of the input is one object, with the
-  protocol's field names.
+## Agents
 
 ```ts
-const agent = wardrik.agent("agt_01JF8X5RQ2");
+const agent = wardrik.agent("support-bot");
 
 await agent.define({
   model: "anthropic:claude-sonnet-4-5",
@@ -50,98 +31,61 @@ await agent.define({
   tools: ["linear/*", "workers/*"],
 });
 
-await agent.triggerSet("sweep", { every: "*/30 * * * *", prompt: "Check the queue." });
-await agent.approve("call_1", { note: "Go ahead." });
+const reply = await agent.reply("Anything on fire?");
+if (reply.status === "completed") console.log(reply.text);
 
-const agents = await wardrik.agents.list({ agents: ["agt_01JF8X5RQ2", "agt_01JF8X7ZK4"] });
+for await (const event of agent.stream("And now?")) {
+  if (event.type === "wardrik.message.delta") process.stdout.write(event.data.delta);
+}
 ```
 
-An output with one property resolves to that property: `agents.list` resolves to the list,
-`agent.ask` to the message. An operation with no output resolves to `undefined`.
-
-`wardrik.run(id, input)` runs any operation by its ID, with path parameters in the input:
-
-```ts
-await wardrik.run("agent.ask", { agent: "agt_01JF8X5RQ2", content: "Hi" });
-```
-
-An agent's ID is whatever your app chose for it. The SDK never reads it, and sends it as one
-URL-encoded path segment.
+* `ask` queues a message. `stream` yields the events of the run that answers it. `reply` resolves when that run ends.
+* A run waiting on a person gives `reply.status === "waiting"` and its `interrupts`.
+  Answer with `agent.approve(interrupt.id)` or `agent.deny(interrupt.id)`.
+* An interrupt with reason `authorization` waits for a person to connect an account.
+  `agent.authorization(interrupt.id)` gives the `{ url, code? }` to show them.
+* An agent ID is any string your app picks.
 
 ## Conversations
 
-A conversation runs on its agent's definition, with a history of its own. A chat thread is one.
-Pass its ID, as your app chose it, to address it:
-
 ```ts
-const thread = wardrik.agent("agt_01JF8X5RQ2", { conversation: "C1-1696.1234" });
+const thread = wardrik.agent("support-bot", { conversation: "C1-1696.1234" });
 
-const reply = await thread.reply("Is the deploy done?");
+await thread.reply("Is the deploy done?");
 await thread.clear();
 ```
 
-* `stream` and `reply` follow the conversation's own events.
-* `read`, `ask`, `approve`, `events` and the other operations that can act on a conversation act
-  on this one.
-* `define`, `forget`, `spawn` and the trigger operations act on the agent.
-* `wardrik.run` takes `conversation` in the input:
-  `wardrik.run("agent.ask", { agent, conversation, content })`.
+* Each conversation has its own history and shares the agent's definition.
+* `define`, `forget`, `spawn` and the trigger methods always act on the agent.
 
-`agents.list` and `interrupts.list` give each item's `conversation`, and every event carries its
-`agent` and `conversation`. The `agents` filter covers each agent's conversations too.
+## Other operations
 
-## Asking
+Every operation in the protocol is a method. Those not on an agent live on namespaces:
 
 ```ts
-for await (const event of agent.stream("What's on fire?")) {
-  if (event.type === "wardrik.message.delta") process.stdout.write(event.data.delta);
+const agents = await wardrik.agents.list({ agents: ["support-bot", "billing-bot"] });
 
-  if (event.type === "wardrik.run.interrupted") {
-    for (const interrupt of event.data.interrupts) await agent.approve(interrupt.id);
-  }
-}
-
-const reply = await agent.reply("Anything new?");
-if (reply.status === "completed") console.log(reply.text);
+await wardrik.run("agent.ask", { agent: "support-bot", conversation: "C1", content: "Hi" });
 ```
 
-| Method | Does |
-| --- | --- |
-| `ask` | Queues the message and returns it. |
-| `stream` | Sends the message and yields the events of the run that answers it, until the run completes, fails or is cancelled. |
-| `reply` | Sends the message and resolves when the run ends, or with the interrupts it waits on. |
-
-An interrupt with reason `authorization` waits for a person to connect an account. No event
-carries the sign-in link. Fetch it with `agent.authorization(interrupt.id)`, which resolves to
-`{ url, code? }`. The caller needs permission to decide the agent's calls. The call carries on by
-itself once the person connects.
+* A response with one field resolves to that field, so `agents.list` resolves to the list.
+* `wardrik.run(id, input)` runs any operation by its ID.
 
 ## Events
 
-Every event is a CloudEvent with a `type` of `wardrik.<noun>.<verb>`. `WardrikEvent` is a union
-over `type`, so checking `event.type` narrows `event.data`.
-
 ```ts
-const events = agent.streamEvents({ after: saved });
-
-for await (const event of events) {
-  // …
+for await (const event of agent.streamEvents({ after: saved })) {
+  console.log(event.type, event.data);
 }
 ```
 
-A stream reconnects after any drop, including a server restart. It resumes after `events.cursor`:
-the cursor of the last event it yielded that moved the cursor.
+* Checking `event.type` narrows `event.data`.
+* A stream reconnects on its own and resumes after its `cursor`. Save it and pass it back as `after`.
+* Without `after`, a stream starts at the end of the log.
+* Deltas and tool progress are not resent after a reconnect. `wardrik.message.completed` has the whole text.
+* `wardrik.events.dropped` says the log was trimmed past your cursor.
 
-* A cursor is an opaque string. Pass it back as `after`.
-* A snapshot's `cursor`, a sent message's `cursor` and a page's `next` are cursors too.
-* Without `after`, a stream starts at the end of the log when it opens.
-* Live events (text and reasoning deltas, tool progress and `wardrik.activity.changed`) don't move
-  the cursor and aren't resent after a reconnect. `wardrik.message.completed` carries the whole
-  text.
-* If the log was trimmed past the cursor, a `wardrik.events.dropped` event says so.
-
-`wardrik.events.streamList` follows many agents at once, by ID. `wardrik.listen` passes each
-event to the handler for its type, with the cursor after it:
+Handle events from many agents by type:
 
 ```ts
 await wardrik.listen(
@@ -153,29 +97,22 @@ await wardrik.listen(
       });
     },
   },
-  { agents: ["agt_01JF8X5RQ2"], after: await db.cursor("runs") },
+  { agents: ["support-bot"], after: await db.cursor("runs") },
 );
 ```
 
-The server doesn't store your position. Save the cursor with your work and resume from it. Each
-event is handled at least once, so drop repeats by `id`. `wardrik.events.dropped` is always sent,
-whatever handlers you pass, so a gap never goes unseen.
+Each event arrives at least once. Drop repeats by `event.id`.
 
-A stream never ends by itself. To read a log to its end and stop, as a backfill does, read pages
-with `agent.events` or `wardrik.events.list` until one is empty:
+A stream never ends. To backfill, read pages until one is empty:
 
 ```ts
-let after = saved;
-
-for (;;) {
-  const page = await wardrik.events.list({ agents: ["agt_01JF8X5RQ2"], after, limit: 500 });
-  for (const event of page.events) await save(event);
+for (let after = saved; ; ) {
+  const page = await wardrik.events.list({ agents: ["support-bot"], after, limit: 500 });
   if (page.events.length === 0) break;
+  for (const event of page.events) await save(event);
   after = page.next;
 }
 ```
-
-`page.next` is a cursor, so a stream can carry on from it.
 
 ## Tools
 
@@ -187,65 +124,37 @@ wardrik.tool({
   description: "Refund an order in full.",
   input: z.object({ orderId: z.string() }),
   idempotent: true,
-  run: ({ orderId }, { idempotencyKey }) =>
-    stripe.refunds.create({ payment_intent: orderId }, { idempotencyKey }),
+  run: async ({ orderId }, { idempotencyKey, cost }) => {
+    const refund = await stripe.refunds.create({ payment_intent: orderId }, { idempotencyKey });
+    cost(0.01);
+    return { refund: refund.id };
+  },
 });
 
-await wardrik.work();
+await wardrik.work({ signal });
 ```
 
-`work` holds a WebSocket open to the server and answers calls over it, as an MCP server, until
-its `signal` aborts. The server offers the tools as `workers__<name>` to every agent the credential
-may serve whose tools include `workers/*`.
-
-### `run`
-
-* Returning an object makes it the call's result. Returning a string makes it text.
-* Throwing fails the call, and the model is told.
-* A tool that isn't `readOnly` is gated: a call waits on a person unless the agent's policy allows
-  it by name.
-
-Its second argument is a `ToolContext`:
-
-* `agent` - the agent the call is for, `{ key }`, its ID as your app named it. The server sets it, never
-  from what the model sent. A worker serving
-  an agent per customer can answer each with only their data.
-* `run` - the run the call is part of.
-* `idempotencyKey` - the same each time the server runs this call. Pass it to whatever the tool
-  changes.
-* `signal` - aborts when the server stops waiting for the call, or the socket drops.
-* `cost(usd)` - reports what the call cost. The call's `tool_call.completed` event carries it,
-  and budgets count it.
-
-### Reconnects
-
-* The socket reopens whenever it drops, backing off up to 30 seconds.
-* The worker pings the server every `keepalive` milliseconds, `15_000` unless set. If a ping goes
-  unanswered for as long again, it drops the socket and reconnects.
-* The server withdraws a worker's tools when its socket closes, and offers them again when it's
-  back. Each turn uses the tools offered when it starts.
-* A call running when the socket drops is aborted through its `signal`. It may have run. The
-  server runs it again, with the same `idempotencyKey`, if every worker offering the tool marks it
-  `idempotent` or `readOnly`. Otherwise it waits on a person to approve running it again.
+* `work` keeps a WebSocket open and answers calls until `signal` aborts. It reconnects on its own.
+* Agents whose `tools` include `workers/*` see the tool as `workers__refund_order`.
+* Return an object or a string. Throw to fail the call.
+* A tool not marked `readOnly` waits for a person's approval, unless the agent's policy allows it.
+* The context's `agent.key` is the calling agent's ID. Use it to scope data per agent.
+* A call cut off by a dropped socket runs again only if the tool is `idempotent` or `readOnly`.
+  It gets the same `idempotencyKey`.
 
 `examples/refund.ts` runs a worker and an agent together.
 
 ## Errors
 
-A request the API refuses throws a `WardrikError` with:
+A refused request throws a `WardrikError` with `status`, `type` (like `not_found` or `forbidden`) and `requestId`.
 
-* `status` - the HTTP status.
-* `type` - the error type, like `not_found` or `conflict`.
-* `requestId` - the response's `request-id`, to quote when asking for help.
+## Development
 
-## Generated code
-
-`src/protocol.ts` (the types) and `src/operations.ts` (the methods) are generated from
-`../wardrik_protocol/priv/v1`, or the directory in `WARDRIK_PROTOCOL`. After the protocol
-changes, run `npm run generate`. `npm run check` fails while either file is out of date.
+`src/protocol.ts` and `src/operations.ts` are generated from `../wardrik_protocol/priv/v1`, or `WARDRIK_PROTOCOL`.
 
 ```sh
 npm ci
-npm run check   # generated code, type check, tests
-npm run build   # dist/
+npm run generate  # after the protocol changes
+npm run check     # generated code, types, tests
+npm run build     # dist/
 ```

@@ -281,19 +281,19 @@ export type OperationId = keyof typeof operations;
 /** What each operation takes: its path and query parameters and its body, as one object. */
 export interface Inputs {
   "agents.list": {
-    /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent the caller reaches where left out. */
+    /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent you may see unless set. */
     agents?: string[] | undefined;
   };
   "agents.forget": {
-    /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent the caller reaches where left out. */
+    /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent you may see unless set. */
     agents?: string[] | undefined;
   };
   "interrupts.list": {
-    /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent the caller reaches where left out. */
+    /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent you may see unless set. */
     agents?: string[] | undefined;
   };
   "events.list": {
-    /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent the caller reaches where left out. */
+    /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent you may see unless set. */
     agents?: string[] | undefined;
     /** The event types to read, as wardrik.run.completed, given once for each. Every type where left out. A wardrik.events.dropped comes whatever the types. */
     types?: string[] | undefined;
@@ -303,7 +303,7 @@ export interface Inputs {
     limit?: number | undefined;
   };
   "events.head": {
-    /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent the caller reaches where left out. */
+    /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent you may see unless set. */
     agents?: string[] | undefined;
   };
   "agent.read": {
@@ -393,7 +393,7 @@ export interface Inputs {
     conversation?: string | undefined;
   } & Deny;
   "agents.cancel": {
-    /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent the caller reaches where left out. */
+    /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent you may see unless set. */
     agents?: string[] | undefined;
   };
   "agent.definition": {
@@ -443,7 +443,7 @@ export interface Inputs {
     trigger: string;
   };
   "deployment.reload": {
-    /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent the caller reaches where left out. */
+    /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent you may see unless set. */
     agents?: string[] | undefined;
   };
   "deployment.nodes": {};
@@ -491,9 +491,9 @@ export interface Outputs {
 
 /** The `agent.*` operations. */
 export class AgentOperations {
-  /** The agent's ID, as your app chose it. */
+  /** The agent's ID. */
   readonly agent: string;
-  /** The conversation its operations act on. The agent's own history where undefined. */
+  /** The conversation the methods act on. `undefined` for the agent's own history. */
   readonly conversation: string | undefined;
   readonly #runner: Runner;
 
@@ -520,7 +520,7 @@ export class AgentOperations {
    *
    * Starts the agent the definition describes, or brings the one running to it from its next turn. A definition put again replaces the last. A key nothing here supports yet answers not_supported, naming it.
    *
-   * Acts on the agent, whatever `conversation` is.
+   * Acts on the agent, never a conversation.
    */
   define(input: AgentDefinition = {}, options: CallOptions = {}): Promise<Outputs["agent.define"]> {
     return this.#runner.call("agent.define", { ...input, agent: this.agent }, options);
@@ -529,7 +529,7 @@ export class AgentOperations {
   /**
    * Forget an agent.
    *
-   * Acts on the agent, whatever `conversation` is.
+   * Acts on the agent, never a conversation.
    */
   forget(options: CallOptions = {}): Promise<Outputs["agent.forget"]> {
     return this.#runner.call("agent.forget", { agent: this.agent }, options);
@@ -606,8 +606,8 @@ export class AgentOperations {
   }
 
   /**
-   * Streams what `agent.events` reads, then each new event as it's written. Starts after
-   * `after`, or at the end of the log. See `EventStream`.
+   * Like `events`, then follows each new event as it's written. Starts after `after`, or at
+   * the end of the log. See `EventStream`.
    */
   streamEvents(
     input: {
@@ -684,7 +684,7 @@ export class AgentOperations {
   /**
    * Read an agent's definition.
    *
-   * Acts on the agent, whatever `conversation` is.
+   * Acts on the agent, never a conversation.
    */
   definition(options: CallOptions = {}): Promise<Outputs["agent.definition"]> {
     return this.#runner.call("agent.definition", { agent: this.agent }, options);
@@ -693,7 +693,7 @@ export class AgentOperations {
   /**
    * Start an agent.
    *
-   * Acts on the agent, whatever `conversation` is.
+   * Acts on the agent, never a conversation.
    */
   spawn(options: CallOptions = {}): Promise<Outputs["agent.spawn"]> {
     return this.#runner.call("agent.spawn", { agent: this.agent }, options);
@@ -752,7 +752,7 @@ export class AgentOperations {
    *
    * Sets or changes one trigger of an agent with a definition, which keeps it; not_found where it has none. A trigger whose every and timezone stay keeps its next run.
    *
-   * Acts on the agent, whatever `conversation` is.
+   * Acts on the agent, never a conversation.
    */
   triggerSet(
     trigger: string,
@@ -769,7 +769,7 @@ export class AgentOperations {
   /**
    * Remove one of an agent's triggers.
    *
-   * Acts on the agent, whatever `conversation` is.
+   * Acts on the agent, never a conversation.
    */
   triggerRemove(
     trigger: string,
@@ -806,7 +806,7 @@ export class AgentsOperations {
    */
   list(
     input: {
-      /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent the caller reaches where left out. */
+      /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent you may see unless set. */
       agents?: string[] | undefined;
     } = {},
     options: CallOptions = {},
@@ -821,7 +821,7 @@ export class AgentsOperations {
    */
   forget(
     input: {
-      /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent the caller reaches where left out. */
+      /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent you may see unless set. */
       agents?: string[] | undefined;
     } = {},
     options: CallOptions = {},
@@ -834,7 +834,7 @@ export class AgentsOperations {
    */
   cancel(
     input: {
-      /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent the caller reaches where left out. */
+      /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent you may see unless set. */
       agents?: string[] | undefined;
     } = {},
     options: CallOptions = {},
@@ -857,7 +857,7 @@ export class InterruptsOperations {
    */
   list(
     input: {
-      /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent the caller reaches where left out. */
+      /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent you may see unless set. */
       agents?: string[] | undefined;
     } = {},
     options: CallOptions = {},
@@ -882,7 +882,7 @@ export class EventsOperations {
    */
   list(
     input: {
-      /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent the caller reaches where left out. */
+      /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent you may see unless set. */
       agents?: string[] | undefined;
       /** The event types to read, as wardrik.run.completed, given once for each. Every type where left out. A wardrik.events.dropped comes whatever the types. */
       types?: string[] | undefined;
@@ -897,12 +897,12 @@ export class EventsOperations {
   }
 
   /**
-   * Streams what `events.list` reads, then each new event as it's written. Starts after
-   * `after`, or at the end of the log. See `EventStream`.
+   * Like `list`, then follows each new event as it's written. Starts after `after`, or at
+   * the end of the log. See `EventStream`.
    */
   streamList(
     input: {
-      /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent the caller reaches where left out. */
+      /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent you may see unless set. */
       agents?: string[] | undefined;
       /** The event types to read, as wardrik.run.completed, given once for each. Every type where left out. A wardrik.events.dropped comes whatever the types. */
       types?: string[] | undefined;
@@ -919,7 +919,7 @@ export class EventsOperations {
    */
   head(
     input: {
-      /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent the caller reaches where left out. */
+      /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent you may see unless set. */
       agents?: string[] | undefined;
     } = {},
     options: CallOptions = {},
@@ -969,7 +969,7 @@ export class DeploymentOperations {
    */
   reload(
     input: {
-      /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent the caller reaches where left out. */
+      /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent you may see unless set. */
       agents?: string[] | undefined;
     } = {},
     options: CallOptions = {},
