@@ -15,7 +15,6 @@ import type {
   Authorization,
   Calls,
   Cancelled,
-  Ceilings,
   Connecting,
   Connection,
   Connections,
@@ -37,8 +36,6 @@ import type {
   Providers,
   Reloaded,
   Runs,
-  SecretInput,
-  Secrets,
   Server,
   ServerAdded,
   ServerInput,
@@ -361,36 +358,6 @@ export const operations = {
     body: true,
     unwrap: "agent",
   },
-  "secrets.list": {
-    method: "GET",
-    path: "/v1/secrets",
-    path_params: [],
-    query: ["owner"],
-    body: false,
-    unwrap: "secrets",
-  },
-  "secrets.put": {
-    method: "PUT",
-    path: "/v1/secrets/{name}",
-    path_params: ["name"],
-    query: ["owner"],
-    body: true,
-  },
-  "secrets.delete": {
-    method: "DELETE",
-    path: "/v1/secrets/{name}",
-    path_params: ["name"],
-    query: ["owner"],
-    body: false,
-  },
-  "ceilings.list": {
-    method: "GET",
-    path: "/v1/ceilings",
-    path_params: [],
-    query: ["owner"],
-    body: false,
-    unwrap: "ceilings",
-  },
 } as const;
 
 /** An operation's id, as `agent.ask`. */
@@ -599,26 +566,6 @@ export interface Inputs {
     /** The agent's ID, as acme/triage or acme/@jon/triage, or one of its conversations, as acme/triage/C1-1696.1234, which runs on the agent's definition with a history of its own. Its slashes are sent as they are, and a conversation's last segment follows conversations/, as acme/triage/conversations/C1-1696.1234. No segment holds a colon, which names a person known elsewhere, as slack:T0123/U024BE7LH. */
     agent: string;
   } & Node;
-  "secrets.list": {
-    /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
-    owner: string;
-  };
-  "secrets.put": {
-    /** The secret's name, as GITHUB_TOKEN. */
-    name: string;
-    /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
-    owner: string;
-  } & SecretInput;
-  "secrets.delete": {
-    /** The secret's name, as GITHUB_TOKEN. */
-    name: string;
-    /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
-    owner: string;
-  };
-  "ceilings.list": {
-    /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
-    owner: string;
-  };
 }
 
 /** What each operation answers, an answer of one property being that property. */
@@ -665,10 +612,6 @@ export interface Outputs {
   "deployment.reload": Reloaded;
   "deployment.nodes": Nodes;
   "agent.move": AgentAnswer["agent"];
-  "secrets.list": Secrets["secrets"];
-  "secrets.put": void;
-  "secrets.delete": void;
-  "ceilings.list": Ceilings["ceilings"];
 }
 
 /** The `agent.*` operations. */
@@ -1311,88 +1254,6 @@ export class DeploymentOperations {
   }
 }
 
-/** The `secrets.*` operations. */
-export class SecretsOperations {
-  readonly #runner: Runner;
-
-  /** @internal */
-  constructor(runner: Runner) {
-    this.#runner = runner;
-  }
-
-  /**
-   * List an owner's secrets.
-   *
-   * The names of the secrets the owner holds, and whether each is one they sealed or an account they connected. Never a value.
-   */
-  list(
-    input: {
-      /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
-      owner: string;
-    },
-    options: CallOptions = {},
-  ): Promise<Outputs["secrets.list"]> {
-    return this.#runner.call("secrets.list", { ...input }, options);
-  }
-
-  /**
-   * Seal a secret.
-   *
-   * Seals the value as the owner's secret of that name, in place of any it held. owner deployment is the deployment's own, which ${NAME} in config reads and no agent reaches.
-   */
-  put(
-    name: string,
-    input: {
-      /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
-      owner: string;
-    } & SecretInput,
-    options: CallOptions = {},
-  ): Promise<Outputs["secrets.put"]> {
-    return this.#runner.call("secrets.put", { ...input, name }, options);
-  }
-
-  /**
-   * Remove a secret.
-   *
-   * Removes the owner's secret of that name. Removing none answers as removing one does.
-   */
-  delete(
-    name: string,
-    input: {
-      /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
-      owner: string;
-    },
-    options: CallOptions = {},
-  ): Promise<Outputs["secrets.delete"]> {
-    return this.#runner.call("secrets.delete", { ...input, name }, options);
-  }
-}
-
-/** The `ceilings.*` operations. */
-export class CeilingsOperations {
-  readonly #runner: Runner;
-
-  /** @internal */
-  constructor(runner: Runner) {
-    this.#runner = runner;
-  }
-
-  /**
-   * List an org's ceilings.
-   *
-   * Each budget the org's agents spend from together, with its limit, what they've spent against it in its period now, what approvals granted, and when it starts over.
-   */
-  list(
-    input: {
-      /** The owner, as acme for an org or acme/@jon for a person. Neither holds a colon. */
-      owner: string;
-    },
-    options: CallOptions = {},
-  ): Promise<Outputs["ceilings.list"]> {
-    return this.#runner.call("ceilings.list", { ...input }, options);
-  }
-}
-
 /** Every operation but an agent's, by its namespace. */
 export class Operations {
   /** The `agents.*` operations. */
@@ -1413,10 +1274,6 @@ export class Operations {
   readonly notifyTargets: NotifyTargetsOperations;
   /** The `deployment.*` operations. */
   readonly deployment: DeploymentOperations;
-  /** The `secrets.*` operations. */
-  readonly secrets: SecretsOperations;
-  /** The `ceilings.*` operations. */
-  readonly ceilings: CeilingsOperations;
 
   /** @internal */
   constructor(runner: Runner) {
@@ -1429,7 +1286,5 @@ export class Operations {
     this.providers = new ProvidersOperations(runner);
     this.notifyTargets = new NotifyTargetsOperations(runner);
     this.deployment = new DeploymentOperations(runner);
-    this.secrets = new SecretsOperations(runner);
-    this.ceilings = new CeilingsOperations(runner);
   }
 }

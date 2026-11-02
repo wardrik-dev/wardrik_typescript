@@ -12,7 +12,8 @@
 
 ### Breaking
 
-- `secrets.put` takes a `purpose`: `api_key`, `client_secret`, `header` or `signing_secret`.
+- `secrets.*` and `ceilings.list` are gone, with the protocol's: `wardrik_daemon` serves them on its
+  own routes.
 - `tokens.*` are gone, and the operations over many agents take `agents`, exact agent IDs, for
   `resources`.
 

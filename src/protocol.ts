@@ -261,19 +261,6 @@ export interface Spent {
   usd: number;
 }
 /**
- * An amount in dollars, tokens or both. A limit leaves out what it doesn't limit.
- */
-export interface Amount {
-  /**
-   * US dollars.
-   */
-  usd?: number;
-  /**
-   * Tokens, input and output together.
-   */
-  tokens?: number;
-}
-/**
  * One agent of agents.list.
  */
 export interface AgentSummary {
@@ -606,32 +593,6 @@ export interface Calls {
  */
 export interface Cancelled {
   cancelled: string[];
-}
-/**
- * What ceilings.list answers: each of an org's ceilings, budgets its agents spend from together, with what they've spent against it in its period now.
- */
-export interface Ceilings {
-  ceilings: {
-    /**
-     * The ceiling's name.
-     */
-    ceiling: string;
-    /**
-     * How long its limit lasts before it starts over.
-     */
-    per: "day" | "week" | "month" | "total";
-    /**
-     * What the org's next model call does once they've spent it: waits on a ceiling_approval, is refused, or runs.
-     */
-    on_exhausted: "ask" | "deny" | "continue";
-    limit: Amount;
-    spent: Amount;
-    granted: Amount;
-    /**
-     * The day it starts over, in its timezone. Absent for a ceiling in total.
-     */
-    starts_over?: string;
-  }[];
 }
 /**
  * What channel.deliver takes: the request a chat app sent, its raw body and its headers, with lowercase names. The surface that receives it passes them on as they came, since a signature covers the exact body.
@@ -1070,28 +1031,6 @@ export interface Runs {
     last_at: string | null;
   };
   cursor: string;
-}
-/**
- * What secrets.put takes: the value to seal, and what it's for. A secret is read only for its purpose, so a client secret is never read as an API key.
- */
-export interface SecretInput {
-  value: string;
-  /**
-   * api_key for a key code calls a service with, client_secret for an OAuth app's, header for an MCP server's header, signing_secret for a webhook's.
-   */
-  purpose: "api_key" | "client_secret" | "header" | "signing_secret";
-}
-/**
- * What secrets.list answers: each secret the owner holds, by name, and what it's for. Never a value.
- */
-export interface Secrets {
-  secrets: {
-    name: string;
-    /**
-     * What it's for: api_key, client_secret, header or signing_secret for one the owner sealed, grant for an account they connected, token for a chat app's install. secret for one sealed with no purpose.
-     */
-    kind: "secret" | "grant" | "api_key" | "client_secret" | "header" | "signing_secret" | "token";
-  }[];
 }
 /**
  * An MCP server an owner's agents reach: who holds it, where it came from, its URL, and how its agents sign in to it. Never its headers.

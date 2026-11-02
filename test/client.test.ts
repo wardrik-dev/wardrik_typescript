@@ -173,24 +173,18 @@ describe("many agents", () => {
 });
 
 describe("owners", () => {
-  test("connect accounts, add servers, keep secrets and read ceilings, for the owner named", async () => {
+  test("connect accounts and add servers, for the owner named", async () => {
     const link = { provider: "linear", connected: false, authorization: { url: "https://auth.example.com/a" } };
     server.on("POST", "/v1/connections/linear", (_request, response) => json(response, 200, link));
     server.on("POST", "/v1/servers", (_request, response) => json(response, 201, { server: "crm", connected: true }));
-    server.on("PUT", "/v1/secrets/CRM_KEY", (_request, response) => json(response, 204));
-    server.on("GET", "/v1/ceilings", (_request, response) => json(response, 200, { ceilings: [] }));
 
     const crm = { name: "crm", url: "https://mcp.crm.example/mcp", auth: { secret: { name: "CRM_KEY" } } };
     assert.deepEqual(await wardrik.connections.connect("linear", { owner: "acme/@jon" }), link);
     await wardrik.mcpServers.add({ owner: "acme", ...crm });
-    assert.equal(await wardrik.secrets.put("CRM_KEY", { owner: "acme", value: "s3cret", purpose: "header" }), undefined);
-    assert.deepEqual(await wardrik.ceilings.list({ owner: "acme" }), []);
 
     assert.deepEqual(sent(), [
       ["POST", "/v1/connections/linear?owner=acme%2F%40jon", undefined],
       ["POST", "/v1/servers?owner=acme", crm],
-      ["PUT", "/v1/secrets/CRM_KEY?owner=acme", { value: "s3cret", purpose: "header" }],
-      ["GET", "/v1/ceilings?owner=acme", undefined],
     ]);
   });
 });
