@@ -86,7 +86,7 @@ for await (const event of agent.streamEvents({ after: saved })) {
 * Deltas and tool progress are not resent after a reconnect. `wardrik.message.completed` has the whole text.
 * `wardrik.events.dropped` says the log was trimmed past your cursor.
 
-Handle events from many agents by type:
+Handle the events of the agents you name, by type:
 
 ```ts
 await wardrik.listen(

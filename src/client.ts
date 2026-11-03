@@ -96,7 +96,7 @@ export class Wardrik extends Operations {
    * - Each event arrives at least once. Drop repeats by `event.id`.
    * - Resolves when `signal` aborts. Rejects with what a handler throws.
    */
-  async listen(handlers: Handlers, options: ListenOptions = {}): Promise<void> {
+  async listen(handlers: Handlers, options: ListenOptions): Promise<void> {
     const input = { agents: options.agents, types: Object.keys(handlers), after: options.after };
     const events = this.#runner.stream("events.list", input, { signal: options.signal });
 

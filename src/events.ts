@@ -20,8 +20,8 @@ export type Handlers = {
 
 /** Options for `wardrik.listen`. */
 export interface ListenOptions {
-  /** Agent IDs to follow, with their conversations. Defaults to every agent the token can read. */
-  agents?: string[] | undefined;
+  /** Agent IDs to follow, with their conversations. */
+  agents: string[];
   /** The cursor to resume after. Defaults to the next event written. */
   after?: string | undefined;
   signal?: AbortSignal | undefined;

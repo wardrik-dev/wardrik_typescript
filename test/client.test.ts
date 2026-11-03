@@ -313,7 +313,7 @@ describe("listen", () => {
           throw new Error("the database is down");
         },
       },
-      { after: "c6" },
+      { agents: ["agt_01JF8X5RQ2"], after: "c6" },
     );
 
     await assert.rejects(listening, /the database is down/);

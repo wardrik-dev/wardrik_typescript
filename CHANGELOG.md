@@ -3,6 +3,8 @@
 ## Unreleased
 
 - `agents.list` takes `limit` and `after`, and resolves to `{ agents, next }`, not the list.
+- `listen`, `events.list` and `events.head` take `agents`, required: they read only the agents
+  named.
 
 ## 0.1.0-rc.2 (2026-11-02)
 

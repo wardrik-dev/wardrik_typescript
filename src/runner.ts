@@ -50,7 +50,7 @@ export class Runner {
       return (await this.call("agent.read", agent)).cursor;
     }
 
-    return this.call("events.head", { agents: input["agents"] as string[] | undefined });
+    return this.call("events.head", { agents: input["agents"] as string[] });
   }
 }
 

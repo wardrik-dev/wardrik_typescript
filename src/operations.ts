@@ -296,8 +296,8 @@ export interface Inputs {
     agents?: string[] | undefined;
   };
   "events.list": {
-    /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent you may see unless set. */
-    agents?: string[] | undefined;
+    /** The agents to read, by ID, given once for each. Each covers its conversations too. */
+    agents: string[];
     /** The event types to read, as wardrik.run.completed, given once for each. Every type where left out. A wardrik.events.dropped comes whatever the types. */
     types?: string[] | undefined;
     /** The cursor to read after: a page's next, the id of an event a stream gave, or a snapshot's cursor. */
@@ -306,8 +306,8 @@ export interface Inputs {
     limit?: number | undefined;
   };
   "events.head": {
-    /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent you may see unless set. */
-    agents?: string[] | undefined;
+    /** The agents to read, by ID, given once for each. Each covers its conversations too. */
+    agents: string[];
   };
   "agent.read": {
     /** The agent's ID, as your app chose it, in one URL-encoded path segment. */
@@ -889,15 +889,15 @@ export class EventsOperations {
    */
   list(
     input: {
-      /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent you may see unless set. */
-      agents?: string[] | undefined;
+      /** The agents to read, by ID, given once for each. Each covers its conversations too. */
+      agents: string[];
       /** The event types to read, as wardrik.run.completed, given once for each. Every type where left out. A wardrik.events.dropped comes whatever the types. */
       types?: string[] | undefined;
       /** The cursor to read after: a page's next, the id of an event a stream gave, or a snapshot's cursor. */
       after?: string | undefined;
       /** How many to read, 100 unless set. */
       limit?: number | undefined;
-    } = {},
+    },
     options: CallOptions = {},
   ): Promise<Outputs["events.list"]> {
     return this.#runner.call("events.list", { ...input }, options);
@@ -909,13 +909,13 @@ export class EventsOperations {
    */
   streamList(
     input: {
-      /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent you may see unless set. */
-      agents?: string[] | undefined;
+      /** The agents to read, by ID, given once for each. Each covers its conversations too. */
+      agents: string[];
       /** The event types to read, as wardrik.run.completed, given once for each. Every type where left out. A wardrik.events.dropped comes whatever the types. */
       types?: string[] | undefined;
       /** The cursor to read after: a page's next, the id of an event a stream gave, or a snapshot's cursor. */
       after?: string | undefined;
-    } = {},
+    },
     options: StreamOptions = {},
   ): EventStream {
     return this.#runner.stream("events.list", { ...input }, options);
@@ -926,9 +926,9 @@ export class EventsOperations {
    */
   head(
     input: {
-      /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent you may see unless set. */
-      agents?: string[] | undefined;
-    } = {},
+      /** The agents to read, by ID, given once for each. Each covers its conversations too. */
+      agents: string[];
+    },
     options: CallOptions = {},
   ): Promise<Outputs["events.head"]> {
     return this.#runner.call("events.head", { ...input }, options);
