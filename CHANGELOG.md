@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- `agents.list` takes `limit` and `after`, and resolves to `{ agents, next }`, not the list.
+
 ## 0.1.0-rc.2 (2026-11-02)
 
 - `wardrik.agent(id, { conversation })` acts on one of an agent's conversations. Its `stream` and

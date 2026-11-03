@@ -37,9 +37,8 @@ export const operations = {
     method: "GET",
     path: "/v1/agents",
     path_params: [],
-    query: ["agents"],
+    query: ["agents", "after", "limit"],
     body: false,
-    unwrap: "agents",
   },
   "agents.forget": {
     method: "DELETE",
@@ -283,6 +282,10 @@ export interface Inputs {
   "agents.list": {
     /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent you may see unless set. */
     agents?: string[] | undefined;
+    /** The cursor to read after: a page's next. */
+    after?: string | undefined;
+    /** How many to read. Every agent unless set. */
+    limit?: number | undefined;
   };
   "agents.forget": {
     /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent you may see unless set. */
@@ -457,7 +460,7 @@ export interface Inputs {
 
 /** What each operation answers, an answer of one property being that property. */
 export interface Outputs {
-  "agents.list": Agents["agents"];
+  "agents.list": Agents;
   "agents.forget": Forgotten;
   "interrupts.list": Interrupts["interrupts"];
   "events.list": Events;
@@ -808,6 +811,10 @@ export class AgentsOperations {
     input: {
       /** The agents to cover, by ID, given once for each. Each covers its conversations too. Every agent you may see unless set. */
       agents?: string[] | undefined;
+      /** The cursor to read after: a page's next. */
+      after?: string | undefined;
+      /** How many to read. Every agent unless set. */
+      limit?: number | undefined;
     } = {},
     options: CallOptions = {},
   ): Promise<Outputs["agents.list"]> {

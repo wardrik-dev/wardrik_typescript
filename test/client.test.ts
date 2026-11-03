@@ -165,13 +165,13 @@ describe("an agent", () => {
 
 describe("many agents", () => {
   test("are listed, cancelled, forgotten and their parked calls read", async () => {
-    server.on("GET", "/v1/agents", (_request, response) => json(response, 200, { agents: [] }));
+    server.on("GET", "/v1/agents", (_request, response) => json(response, 200, { agents: [], next: null }));
     server.on("POST", "/v1/agents/cancel", (_request, response) => json(response, 202, { cancelled: ["agt_a"] }));
     server.on("DELETE", "/v1/agents", (_request, response) => json(response, 200, { forgotten: ["agt_a"], kept: [], failed: [] }));
     server.on("GET", "/v1/interrupts", (_request, response) => json(response, 200, { interrupts: [] }));
 
     const agents = ["agt_01JF8X5RQ2", "acme/notes"];
-    assert.deepEqual(await wardrik.agents.list({ agents }), []);
+    assert.deepEqual(await wardrik.agents.list({ agents }), { agents: [], next: null });
     assert.deepEqual(await wardrik.agents.cancel({ agents }), ["agt_a"]);
     assert.deepEqual((await wardrik.agents.forget({ agents })).forgotten, ["agt_a"]);
     assert.deepEqual(await wardrik.interrupts.list(), []);

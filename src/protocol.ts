@@ -489,10 +489,14 @@ export interface AgentSnapshot {
   spent_today?: Spent;
 }
 /**
- * What agents.list answers: the agents the patterns cover.
+ * What agents.list answers: the agents the patterns cover, sorted by ID, and where to read on from.
  */
 export interface Agents {
   agents: AgentSummary[];
+  /**
+   * The cursor after these agents, to pass as after. null when none follow, or no limit was set.
+   */
+  next?: string | null;
 }
 /**
  * What agent.approve takes: a note the agent reads beside the call's answer, if any. The call runs as the model wrote it.

@@ -63,12 +63,13 @@ await thread.clear();
 Every operation in the protocol is a method. Those not on an agent live on namespaces:
 
 ```ts
-const agents = await wardrik.agents.list({ agents: ["support-bot", "billing-bot"] });
+const { agents, next } = await wardrik.agents.list({ limit: 100 });
+const more = await wardrik.agents.list({ limit: 100, after: next });
 
 await wardrik.run("agent.ask", { agent: "support-bot", conversation: "C1", content: "Hi" });
 ```
 
-* A response with one field resolves to that field, so `agents.list` resolves to the list.
+* A response with one field resolves to that field, so `interrupts.list` resolves to the list.
 * `wardrik.run(id, input)` runs any operation by its ID.
 
 ## Events
