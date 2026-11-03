@@ -860,6 +860,19 @@ export interface Timeline {
               result?: unknown;
               error?: string | null;
             }
+          | {
+              id: string;
+              type: "subagent";
+              name?: string | null;
+              prompt?: string | null;
+              status: "running" | "ok" | "error";
+              /**
+               * How many tool calls it made.
+               */
+              tools: number;
+              answer?: string | null;
+              error?: string | null;
+            }
         )[];
         model?: string | null;
         cost_micro_usd?: number;
