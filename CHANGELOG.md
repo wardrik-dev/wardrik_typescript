@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- `TriggerDefinition.overlap` takes `"settle"`.
+
 ## 0.1.0-rc.3 (2026-11-03)
 
 - A timeline's run has `subagent` steps.

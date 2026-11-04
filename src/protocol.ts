@@ -405,9 +405,9 @@ export interface AgentDefinition {
      */
     prompt_file?: string;
     /**
-     * What a firing does while a run is still going: skip it, or queue its prompt.
+     * What a firing does while the agent is busy: skip it, queue its prompt, or settle: where the agent waits on an answer nobody gave, cancel that turn and ask, and otherwise skip.
      */
-    overlap?: "skip" | "queue";
+    overlap?: "skip" | "queue" | "settle";
     /**
      * What a trigger does about the firings it missed while down.
      */
@@ -888,7 +888,7 @@ export interface Timeline {
   cursor: string;
 }
 /**
- * What agent.trigger_set takes, with a prompt or a prompt_file, and what it and agent.trigger_remove answer, with its name. A trigger on a clock has every, and a cron expression a timezone where it is not UTC; overlap is skip, missed is run_once and jitter is 0 where they are left out. feed watches an RSS or Atom feed, or a list of them. A webhook has webhook in place of every, holding its secret, as ${NAME}, and verify, shared or standard; it is sent requests at POST /v1/hooks/{agent}/{trigger}, and its overlap is queue where it says none.
+ * What agent.trigger_set takes, with a prompt or a prompt_file, and what it and agent.trigger_remove answer, with its name. A trigger on a clock has every, and a cron expression a timezone where it is not UTC; overlap is settle, missed is run_once and jitter is 0 where they are left out. feed watches an RSS or Atom feed, or a list of them. A webhook has webhook in place of every, holding its secret, as ${NAME}, and verify, shared or standard; it is sent requests at POST /v1/hooks/{agent}/{trigger}, and its overlap is queue where it says none.
  */
 export interface TriggerDefinition {
   /**
@@ -912,9 +912,9 @@ export interface TriggerDefinition {
    */
   prompt_file?: string;
   /**
-   * What a firing does while a run is still going: skip it, or queue its prompt.
+   * What a firing does while the agent is busy: skip it, queue its prompt, or settle: where the agent waits on an answer nobody gave, cancel that turn and ask, and otherwise skip.
    */
-  overlap?: "skip" | "queue";
+  overlap?: "skip" | "queue" | "settle";
   /**
    * What a trigger does about the firings it missed while down.
    */
@@ -949,7 +949,7 @@ export interface ActivityChangedData {
   activity: Activity;
 }
 /**
- * Someone dropped the turn an agent was taking, and what was queued behind it.
+ * Someone dropped the turn an agent was taking, and what was queued behind it, or a trigger dropped a turn nobody answered.
  */
 export interface AgentCancelledData {
   agent: {
@@ -963,6 +963,10 @@ export interface AgentCancelledData {
    * The pattern someone cancelled every agent it covers by at once, where it was one of them; every agent's entry from that one change shares its trace.
    */
   resource?: string;
+  /**
+   * The trigger that cancelled a turn waiting on an answer nobody gave, where one did.
+   */
+  trigger?: string;
   actor?: Principal;
   assumed_by?: AssumedBy;
 }
