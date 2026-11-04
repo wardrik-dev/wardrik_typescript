@@ -371,6 +371,39 @@ export interface AgentDefinition {
     on_exhausted?: "ask" | "fail";
   };
   /**
+   * How the agent calls its model. Only these keys: the host sets any other option a model call takes.
+   */
+  model_options?: {
+    /**
+     * How random the model's answers are.
+     */
+    temperature?: number;
+    /**
+     * The share of likely tokens the model samples from.
+     */
+    top_p?: number;
+    /**
+     * The most tokens one model answer may hold.
+     */
+    max_tokens?: number;
+    /**
+     * How hard a reasoning model thinks.
+     */
+    reasoning_effort?: "none" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max" | "default";
+    /**
+     * How many seconds a model call waits for an answer: 300 unless set.
+     */
+    receive_timeout?: number;
+    /**
+     * How many seconds a model's stream may go quiet: 300 unless set.
+     */
+    stream_idle_timeout?: number;
+    /**
+     * How many seconds one model call may take in all. The turn's timeout bounds it unless set.
+     */
+    total_timeout?: number;
+  };
+  /**
    * When the agent summarises its older history, as shares of the model's window; false never does.
    */
   compaction?:

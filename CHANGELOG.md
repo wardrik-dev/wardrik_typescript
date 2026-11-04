@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- `AgentDefinition.model_options`: `temperature`, `top_p`, `max_tokens`, `reasoning_effort`, and
+  the model call's timeouts in seconds.
+
+## Unreleased
+
 - `TriggerDefinition.overlap` takes `"settle"`.
 
 ## 0.1.0-rc.3 (2026-11-03)
