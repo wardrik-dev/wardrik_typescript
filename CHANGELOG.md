@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- `AgentDefinition.retries` notes that a provider's `Retry-After` sets the wait.
 - `AgentDefinition.model_options`: `temperature`, `top_p`, `max_tokens`, `reasoning_effort`, and
   the model call's timeouts in seconds.
 

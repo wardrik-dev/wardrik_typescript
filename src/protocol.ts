@@ -354,7 +354,7 @@ export interface AgentDefinition {
    */
   max_iterations?: number | "infinity";
   /**
-   * How a turn tries a failed model call again, after a random wait of up to a second that doubles each time. A 4xx answer other than 408, 425 and 429 is not tried again. The host's defaults hold where this is absent.
+   * How a turn tries a failed model call again, after a random wait of up to a second that doubles each time, or as long as the provider's Retry-After says, up to max_wait. A 4xx answer other than 408, 425 and 429 is not tried again. The host's defaults hold where this is absent.
    */
   retries?: {
     /**
