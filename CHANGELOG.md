@@ -1,14 +1,11 @@
 # Changelog
 
-## Unreleased
-
-- `AgentDefinition.retries` notes that a provider's `Retry-After` sets the wait.
-- `AgentDefinition.model_options`: `temperature`, `top_p`, `max_tokens`, `reasoning_effort`, and
-  the model call's timeouts in seconds.
-
-## Unreleased
+## 0.1.0-rc.4 (2026-11-04)
 
 - `TriggerDefinition.overlap` takes `"settle"`.
+- `AgentDefinition.model_options`: `temperature`, `top_p`, `max_tokens`, `reasoning_effort`, and
+  the model call's timeouts in seconds.
+- `AgentDefinition.retries` documents `Retry-After`.
 
 ## 0.1.0-rc.3 (2026-11-03)
 

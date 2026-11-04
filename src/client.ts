@@ -8,7 +8,7 @@ import { Runner, type CallOptions } from "./runner.ts";
 import { Worker, type ToolDefinition, type WorkOptions } from "./worker.ts";
 
 /** This SDK's version. */
-export const version = "0.1.0-rc.3";
+export const version = "0.1.0-rc.4";
 
 /** Options for `new Wardrik()`. */
 export interface WardrikOptions {
