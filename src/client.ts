@@ -38,6 +38,8 @@ const env = (name: string): string | undefined =>
  * }
  * ```
  *
+ * Set `WARDRIK_URL` and `WARDRIK_TOKEN` for a running server before using this example.
+ * The server must have the model provider key configured.
  * Throws a `TypeError` without a token.
  */
 export class Wardrik extends Operations {
@@ -83,7 +85,9 @@ export class Wardrik extends Operations {
   }
 
   /**
-   * Passes each event to the handler for its type, with the cursor after it.
+   * Calls the handler for each event type, with the cursor after it.
+   *
+   * Integration fragment: implement `saveRun` and load `savedCursor` from your database.
    *
    * ```ts
    * await wardrik.listen(
@@ -109,6 +113,8 @@ export class Wardrik extends Operations {
   /**
    * Adds a tool that runs in this process. Agents whose tools include `workers/*` call it as
    * `workers__<name>`.
+   *
+   * Integration fragment: import `z` from `zod` and configure your Stripe client as `stripe`.
    *
    * ```ts
    * wardrik.tool({

@@ -33,6 +33,8 @@ const lastDelay = 10_000;
 /**
  * Events after a cursor, as an async iterable. Returned by the `stream*` methods.
  *
+ * Integration fragment: obtain `agent` from a connected client, load `saved`, and implement `save`.
+ *
  * ```ts
  * const events = agent.streamEvents({ after: saved });
  * for await (const event of events) await save(event, events.cursor);
