@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- `Interrupt.arguments`: the arguments of the call a person decides on.
+
 ## 0.1.0-rc.4 (2026-11-04)
 
 - `TriggerDefinition.overlap` takes `"settle"`.

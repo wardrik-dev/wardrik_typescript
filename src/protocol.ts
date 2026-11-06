@@ -180,9 +180,15 @@ export interface Interrupt {
   message: string;
   tool_call_id?: string;
   /**
-   * The tool the call is for, as the agent names it; none for a model's approval.
+   * The tool the person decides on, as the agent names it; none for a model's approval. A call made inside a tool call, such as a coding agent's request, names its own tool.
    */
   name?: string;
+  /**
+   * The arguments of the call the person decides on; none for a model's approval.
+   */
+  arguments?: {
+    [k: string]: unknown;
+  };
   /**
    * The labels of what the run had read, which may be what asked for the call: outside for content nobody on the agent's side wrote.
    */
