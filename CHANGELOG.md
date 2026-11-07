@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.0-rc.5 (2026-11-06)
 
 - `Interrupt.arguments`: the arguments of the call a person decides on.
 

@@ -3,7 +3,7 @@
 Send messages to Wardrik agents over HTTP and run agent tools in your TypeScript process.
 
 ```sh
-npm install @wardrik/sdk@0.1.0-rc.4 zod
+npm install @wardrik/sdk@0.1.0-rc.5 zod
 ```
 
 Runs on Node 22.18+, Bun or Deno. `zod` 4 is a peer dependency, for tool inputs.
