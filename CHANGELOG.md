@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- `version` matches `package.json`. 0.1.0-rc.5 still said 0.1.0-rc.4. A test now checks it.
+
 ## 0.1.0-rc.5 (2026-11-06)
 
 - `Interrupt.arguments`: the arguments of the call a person decides on.
